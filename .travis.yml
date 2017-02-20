@@ -4,7 +4,7 @@ jdk:
 os:
   - linux
 env: 
-  - SOURCE_DIR_1=001-lazy
+  - SOURCE_DIR_1=001-Lazy
 script:
   - cd SORUCE_DIR_1 && gradle check
 
