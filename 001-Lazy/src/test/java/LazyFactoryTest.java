@@ -1,9 +1,6 @@
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -67,6 +64,12 @@ public class LazyFactoryTest {
         doSimpleConstTest(lazyFactory, null);
         doSimpleConstTest(lazyFactory, new Object());
         doSimpleConstTest(lazyFactory, 1);
+        doEqualGetTest(lazyFactory);
+    }
+
+    private void doEqualGetTest(Function<Supplier, Lazy> lazyFactory) {
+        Lazy<Object> lazy = lazyFactory.apply(Object::new);
+        assertEquals(lazy.get(), lazy.get());
     }
 
     private <T> void doSimpleConstTest(Function<Supplier, Lazy> lazyFactory, T constValue) {
