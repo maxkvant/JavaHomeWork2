@@ -6,5 +6,5 @@ os:
 env: 
   - SOURCE_DIR_1=001-Lazy
 script:
-  - cd SORUCE_DIR_1 && gradle check
+  - cd $SORUCE_DIR_1 && gradle check
 
