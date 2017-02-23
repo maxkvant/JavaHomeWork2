@@ -94,7 +94,8 @@ public class LazyFactory {
 
         @Override
         public T get() {
-            if (nullObj == value && atomicUpdater.compareAndSet(this, nullObj, supplier.get())) {
+            final Supplier<T> supplierLink = supplier;
+            if (supplierLink != null && atomicUpdater.compareAndSet(this, nullObj, supplierLink.get())) {
                 supplier = null;
             }
             return (T)value;
@@ -110,7 +111,8 @@ public class LazyFactory {
 
         @Override
         public T get() {
-            if (nullObj == atomicValue.get() && atomicValue.compareAndSet(nullObj, supplier.get())) {
+            final Supplier<T> supplierLink = supplier;
+            if (supplierLink != null && atomicValue.compareAndSet(nullObj, supplier.get())) {
                 supplier = null;
             }
             return (T)atomicValue.get();
