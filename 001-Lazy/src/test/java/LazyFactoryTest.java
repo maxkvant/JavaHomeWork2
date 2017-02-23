@@ -35,28 +35,42 @@ public class LazyFactoryTest {
     }
 
 
-    private void doThreadTest(Function<Supplier<String>, Lazy<String>> lazyFactory) throws InterruptedException {
+    private void doThreadTest(Function<Supplier<Integer>, Lazy<Integer>> lazyFactory) throws InterruptedException {
         final String res = "abacabadabacaba";
-        SupplierCount<String> supplier = new SupplierCount<>(() -> {
+        SupplierCount<Integer> supplier = new SupplierCount<>(() -> {
             try {
-                Thread.currentThread().sleep(10);
+                Thread.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            return res;
+            return new Random().nextInt();
         });
-        Lazy<String> lazy = lazyFactory.apply(supplier);
+
+        Lazy<Integer> lazy = lazyFactory.apply(supplier);
         List<Thread> threads = new ArrayList<>();
+        final List<Integer> values = new ArrayList<>();
+
         for (int i = 0; i < nThreads; i++) {
-            Thread thread = new Thread(() -> assertEquals(res, lazy.get()));
+            Thread thread = new Thread(() -> {
+                Integer value = lazy.get();
+                synchronized (values) {
+                    values.add(value);
+                }
+            });
             threads.add(thread);
         }
+
         for (Thread thread : threads) {
             thread.start();
         }
+
         for (Thread thread : threads) {
             thread.join();
         }
+
+        Collections.sort(values);
+        assertEquals(values.get(0), values.get(values.size() - 1));
+
         System.out.println("supplier calls: " + supplier.count);
     }
 
@@ -64,20 +78,24 @@ public class LazyFactoryTest {
         doSimpleConstTest(lazyFactory, null);
         doSimpleConstTest(lazyFactory, new Object());
         doSimpleConstTest(lazyFactory, 1);
-        doEqualGetTest(lazyFactory);
+        doEqualGetTest1(lazyFactory);
     }
 
-    private void doEqualGetTest(Function<Supplier, Lazy> lazyFactory) {
+
+    @SuppressWarnings("unchecked")
+    private void doEqualGetTest1(Function<Supplier, Lazy> lazyFactory) {
         Lazy<Object> lazy = lazyFactory.apply(Object::new);
         assertEquals(lazy.get(), lazy.get());
     }
 
+
+    @SuppressWarnings("unchecked")
     private <T> void doSimpleConstTest(Function<Supplier, Lazy> lazyFactory, T constValue) {
         SupplierCount<T> supplier = new SupplierCount<>(() -> constValue);
         Lazy<T> lazy = lazyFactory.apply(supplier);
 
-        SupplierCount<Lazy<T> > supplier1 = new SupplierCount<>(() -> lazyFactory.apply(supplier));
-        Lazy<Lazy<T> > lazy1 = lazyFactory.apply(supplier1);
+        SupplierCount<Lazy<T>> supplier1 = new SupplierCount<>(() -> lazyFactory.apply(supplier));
+        Lazy<Lazy<T>> lazy1 = lazyFactory.apply(supplier1);
 
         assertEquals(0, supplier.count);
         assertEquals(constValue, lazy.get());

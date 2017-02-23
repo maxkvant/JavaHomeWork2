@@ -19,7 +19,9 @@ public class LazyFactory {
     /**
      * Returns implementation of Lazy optimized for multi threads.
      */
-    public static <T> Lazy<T> createLazyMultiThread(Supplier<T> supplier) {return new LazyMultiThread<>(supplier); }
+    public static <T> Lazy<T> createLazyMultiThread(Supplier<T> supplier) {
+        return new LazyMultiThread<>(supplier);
+    }
 
     /**
      * Returns implementation of Lazy based on AtomicReferenceFieldUpdater.
@@ -35,23 +37,19 @@ public class LazyFactory {
         return new LazyAtomicReference<>(supplier);
     }
 
-
     private static abstract class AbstractLazy<T> implements Lazy<T> {
         protected final static Object nullObj = new Object();
-        protected volatile Supplier<T> supplier;
-
-        AbstractLazy(Supplier<T> supplier) {
-            this.supplier = supplier;
-        }
     }
 
     private static class LazySimple<T> extends AbstractLazy<T> {
-        private volatile Object value = nullObj;
+        private Object value = nullObj;
+        private Supplier<T> supplier;
 
         LazySimple(Supplier<T> supplier) {
-            super(supplier);
+            this.supplier = supplier;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public synchronized T get() {
             if (value == nullObj) {
@@ -63,18 +61,21 @@ public class LazyFactory {
     }
 
     private static class LazyMultiThread<T> extends AbstractLazy<T> {
-        private volatile Object value = nullObj;
+        private Object value = nullObj;
+        private Supplier<T> supplier;
 
         LazyMultiThread(Supplier<T> supplier) {
-            super(supplier);
+            this.supplier = supplier;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public T get() {
             if (value == nullObj) {
                 synchronized (this) {
                     if (value == nullObj) {
                         value = supplier.get();
+                        supplier = null;
                     }
                 }
             }
@@ -84,14 +85,16 @@ public class LazyFactory {
 
     private static class LazyAtomic<T> extends AbstractLazy<T> {
         private volatile Object value = nullObj;
+        private volatile Supplier<T> supplier;
 
         static final AtomicReferenceFieldUpdater<LazyAtomic, Object> atomicUpdater =
                 AtomicReferenceFieldUpdater.newUpdater(LazyAtomic.class, Object.class, "value");
 
         LazyAtomic(Supplier<T> supplier) {
-            super(supplier);
+            this.supplier = supplier;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public T get() {
             final Supplier<T> supplierLink = supplier;
@@ -104,15 +107,17 @@ public class LazyFactory {
 
     private static class LazyAtomicReference<T> extends AbstractLazy<T> {
         private final AtomicReference<Object> atomicValue = new AtomicReference<>(nullObj);
+        private volatile Supplier<T> supplier;
 
         public LazyAtomicReference(Supplier<T> supplier) {
-            super(supplier);
+            this.supplier = supplier;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public T get() {
             final Supplier<T> supplierLink = supplier;
-            if (supplierLink != null && atomicValue.compareAndSet(nullObj, supplier.get())) {
+            if (supplierLink != null && atomicValue.compareAndSet(nullObj, supplierLink.get())) {
                 supplier = null;
             }
             return (T)atomicValue.get();
