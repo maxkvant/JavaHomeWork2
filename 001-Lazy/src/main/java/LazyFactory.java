@@ -51,7 +51,7 @@ public class LazyFactory {
 
         @SuppressWarnings("unchecked")
         @Override
-        public synchronized T get() {
+        public T get() {
             if (value == nullObj) {
                 value = supplier.get();
                 supplier = null;
@@ -61,7 +61,7 @@ public class LazyFactory {
     }
 
     private static class LazyMultiThread<T> extends AbstractLazy<T> {
-        private Object value = nullObj;
+        private volatile Object value = nullObj;
         private Supplier<T> supplier;
 
         LazyMultiThread(Supplier<T> supplier) {

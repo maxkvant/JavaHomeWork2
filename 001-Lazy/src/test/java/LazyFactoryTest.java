@@ -13,7 +13,6 @@ public class LazyFactoryTest {
     @Test
     public void createLazySimpleTests() throws Exception {
         doSimpleLazySemanticsTest(LazyFactory::createLazySimple);
-        doThreadTest(LazyFactory::createLazySimple);
     }
 
     @Test
