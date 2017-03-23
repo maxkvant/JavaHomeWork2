@@ -5,10 +5,9 @@ os:
   - linux
 env: 
   - SOURCE_DIR_1=001-Lazy
-  - SOURCE_DIR_1=myVCS
+  - SOURCE_DIR_2=myVCS
 script:
-  - cd $SOURCE_DIR_1 && gradle check
-  - cd ..
+  - cd $SOURCE_DIR_1 && gradle check && cd ..
   - cd $SOURCE_DIR_2 && gradle check
   
   
