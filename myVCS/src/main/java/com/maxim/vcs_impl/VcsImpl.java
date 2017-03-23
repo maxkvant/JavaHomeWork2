@@ -157,7 +157,6 @@ public class VcsImpl implements Vcs {
     public void createBranch(String branch_name) throws IOException {
         readIndex();
 
-        System.out.println(branches_dir_path + " | " + branch_name);
         Path path = Paths.get(branches_dir_path + "", branch_name);
         System.out.println(path);
         if (Files.exists(path)) {
@@ -208,9 +207,10 @@ public class VcsImpl implements Vcs {
 
     @Override
     public List<String> logBranches() throws IOException {
-        return Files.walk(commits_dir_path)
+        return Files.walk(branches_dir_path)
                 .filter(Files::isRegularFile)
-                .map(path -> path.getFileName().toString())
+                .map(Path::getFileName)
+                .map(Path::toString)
                 .collect(Collectors.toList());
     }
 
