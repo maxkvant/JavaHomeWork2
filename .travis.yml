@@ -6,19 +6,5 @@ os:
 env: 
   - SOURCE_DIR_1=001-Lazy SOURCE_DIR_2=myVCS
 script:
-  - pwd
-  - cd $SOURCE_DIR_1
-  - pwd
-  - ls -aux
-  - gradle check
-  - cd ..
-  - pwd
-  - ls -aux
-  - printf $SOURCE_DIR_2
-  - cd $SOURCE_DIR_2
-  - pwd
-  - ls -aux
-  - gradle check
-  - cd ..
-  
-  
+  - cd $SOURCE_DIR_1 && gradle check && cd ..
+  - cd $SOURCE_DIR_2 && gradle check && cd ..
