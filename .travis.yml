@@ -4,8 +4,7 @@ jdk:
 os:
   - linux
 env: 
-  - SOURCE_DIR_1=001-Lazy
-  - SOURCE_DIR_2=myVCS
+  - SOURCE_DIR_1=001-Lazy SOURCE_DIR_2=myVCS
 script:
   - pwd
   - cd $SOURCE_DIR_1
