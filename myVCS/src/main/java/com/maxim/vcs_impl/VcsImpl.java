@@ -157,7 +157,10 @@ public class VcsImpl implements Vcs {
     public void createBranch(String branch_name) throws IOException {
         readIndex();
 
-        if (Files.exists(Paths.get(branches_dir_path + "", branch_name))) {
+        System.out.println(branches_dir_path + " | " + branch_name);
+        Path path = Paths.get(branches_dir_path + "", branch_name);
+        System.out.println(path);
+        if (Files.exists(path)) {
             throw new IOException("branch exits");
         }
         VcsBranch branch = new VcsBranch(branch_name, index.commit_id);

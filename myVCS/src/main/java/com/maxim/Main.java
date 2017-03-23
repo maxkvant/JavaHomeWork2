@@ -31,17 +31,23 @@ public class Main {
     private final String[] args;
 
     private final List<Command> commands = ImmutableList.of(
-            new Command(true,"path", "add") {
+            new Command(true, "path", "add") {
                 @Override
                 public void execute() throws IOException {
                     vcs.add(Paths.get(arg));
                 }
             },
 
-            new Command(true,"message", "commit") {
+            new Command(true, "message", "commit") {
                 @Override
                 public void execute() throws IOException {
                     vcs.commit(arg);
+                }
+            },
+            new Command(true, "branch_name", "create-branch") {
+                @Override
+                public void execute() throws IOException {
+                    vcs.createBranch(arg);
                 }
             },
             new Command(true,"branch_name", "checkout", "-b") {
@@ -65,13 +71,13 @@ public class Main {
             new Command(false, "", "log", "-b") {
                 @Override
                 public void execute() throws IOException {
-                    vcs.logBranches();
+                    vcs.logBranches().stream().forEach(System.out::println);
                 }
             },
             new Command(false, "", "log", "-c") {
                 @Override
                 public void execute() throws IOException {
-                    vcs.logCommits();
+                    vcs.logCommits().stream().forEach(System.out::println);
                 }
             }
     );
@@ -117,8 +123,10 @@ public class Main {
         }
 
         public boolean check(String[] args) {
-            return prefix.size() + args_count == args.length &&
+            boolean res = prefix.size() + args_count == args.length &&
                    ImmutableList.copyOf(args).subList(0, prefix.size()).equals(prefix);
+            arg = (res && args_count == 1) ? args[args.length - 1] : null;
+            return res;
         }
 
         public void getArg(String[] args) {
