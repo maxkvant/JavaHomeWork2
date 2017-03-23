@@ -21,7 +21,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class VcsImpl implements Vcs {
     private Index index = new Index();
 
-    VcsImpl() throws IOException {
+    public VcsImpl() throws IOException {
         Files.createDirectories(commits_dir_path);
         Files.createDirectories(blobs_dir_path);
         Files.createDirectories(branches_dir_path);

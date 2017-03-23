@@ -1,6 +1,7 @@
 package com.maxim.vcs_impl;
 
 import com.maxim.vcs_objects.*;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -22,6 +23,9 @@ public class FileUtil {
 
     public static VcsBlobLink addBlob(Path path) {
         try {
+            if (!Files.isRegularFile(path)) {
+                throw new IOException("not file");
+            }
             VcsBlob blob = new VcsBlob(Files.readAllBytes(path));
             Path blob_path = Paths.get(blobs_dir_path + "", blob.md5_hash);
             if (!Files.exists(blob_path)) {
