@@ -1,7 +1,6 @@
 package com.maxim.vcs_impl;
 
 import com.maxim.vcs_objects.*;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import java.io.*;
 import java.nio.file.Files;
