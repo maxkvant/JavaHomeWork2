@@ -20,12 +20,20 @@ public class FileUtil {
     public static final Path branches_dir_path = Paths.get(".", vcs_dir, branches_dir);
     public static final Path index_file_path = Paths.get(".", vcs_dir, index_file);
 
-    public static VcsBlobLink addBlob(Path path) {
+    public static VcsBlob getBlob(Path path) {
         try {
             if (!Files.isRegularFile(path)) {
-                throw new IOException("not file");
+                throw new IOException("not suck file");
             }
-            VcsBlob blob = new VcsBlob(Files.readAllBytes(path));
+            return new VcsBlob(Files.readAllBytes(path));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static VcsBlobLink addBlob(Path path) {
+        try {
+            VcsBlob blob = getBlob(path);
             Path blob_path = Paths.get(blobs_dir_path + "", blob.md5_hash);
             if (!Files.exists(blob_path)) {
                 Files.createFile(blob_path);

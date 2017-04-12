@@ -1,11 +1,10 @@
 package com.maxim.vcs_impl;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.Maps;
+import com.google.common.collect.*;
 import com.maxim.vcs_objects.VcsBlobLink;
 import com.maxim.vcs_objects.VcsBranch;
 import com.maxim.vcs_objects.VcsCommit;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -19,7 +18,7 @@ import static com.maxim.vcs_impl.FileUtil.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class VcsImpl implements Vcs {
-    private Index index = new Index();
+    private Index index = new Index(VcsCommit.nullCommit.id);
 
     public VcsImpl() throws IOException {
         Files.createDirectories(commits_dir_path);
@@ -41,9 +40,8 @@ public class VcsImpl implements Vcs {
             throw new IOException("Please, checkout branch or create branch");
         }
 
-        VcsCommit commit = readCommit(index.commit_id);
-        Map<String, VcsBlobLink> oldFiles = commit.files;
-        List<Long> parents_ids = Collections.singletonList(commit.id);
+        Map<String, VcsBlobLink> oldFiles = getCommittedFiles();
+        List<Long> parents_ids = Collections.singletonList(index.commit_id);
 
         Map<String, VcsBlobLink> currentFiles = new TreeMap<>(loadAdded());
         oldFiles.forEach(currentFiles::putIfAbsent);
@@ -52,25 +50,23 @@ public class VcsImpl implements Vcs {
         writeCommit(new_commit);
 
         index.branch = index.branch.changeCommit(new_commit.id);
+        index = new Index(index.branch);
+
         writeBranch(index.branch);
-
-        index.commit_id = index.branch.commit_id;
-        index.added = new TreeSet<>();
-
         writeIndex();
-        return commit;
+        return new_commit;
     }
 
     @Override
     public void checkoutCommit(long commit_id) throws IOException {
         readIndex();
 
-        VcsCommit curCommit = readCommit(commit_id);
-        for (String file_path : curCommit.files.keySet()) {
+        Map<String, VcsBlobLink> committedFiles = getCommittedFiles();
+        for (String file_path : committedFiles.keySet()) {
             try {
                 Files.delete(Paths.get(file_path));
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
 
@@ -85,9 +81,8 @@ public class VcsImpl implements Vcs {
             Path blob_path = Paths.get(blobs_dir_path.toString(), blob_name);
             Files.copy(blob_path, path, REPLACE_EXISTING);
         }
-        index.branch = null;
-        index.added = new TreeSet<>();
-        index.commit_id = commit_id;
+
+        index = new Index(commit_id);
 
         writeIndex();
     }
@@ -98,7 +93,8 @@ public class VcsImpl implements Vcs {
 
         VcsBranch branch = readBranch(branch_name);
         checkoutCommit(branch.commit_id);
-        index.branch = branch;
+        writeBranch(branch);
+        index = new Index(branch);
 
         writeIndex();
     }
@@ -124,29 +120,27 @@ public class VcsImpl implements Vcs {
             return;
         }
 
-        VcsCommit cur_commit = readCommit(index.commit_id);
         VcsBranch other_branch = readBranch(other_branch_name);
         VcsCommit other_commit = readCommit(other_branch.commit_id);
+        Map<String, VcsBlobLink> cur_files = getCommittedFiles();
 
-        MapDifference<String, VcsBlobLink> map_difference = Maps.difference(cur_commit.files, other_commit.files);
+        MapDifference<String, VcsBlobLink> map_difference = Maps.difference(cur_files, other_commit.files);
         if (map_difference.entriesDiffering().size() > 0) {
             throw new IOException("files are differ:" + map_difference.entriesDiffering());
         }
 
         Map<String, VcsBlobLink> res_files = new TreeMap<>();
-        cur_commit.files.forEach(res_files::putIfAbsent);
+        cur_files.forEach(res_files::putIfAbsent);
         other_commit.files.forEach(res_files::putIfAbsent);
 
-        List<Long> parents_ids = ImmutableList.of(cur_commit.id, other_commit.id);
+        List<Long> parents_ids = ImmutableList.of(index.commit_id, other_commit.id);
         VcsCommit new_commit = new VcsCommit("merged " + other_branch_name, parents_ids, res_files);
         writeCommit(new_commit);
 
         VcsBranch branch = index.branch.changeCommit(new_commit.id);
         writeBranch(branch);
 
-        index.branch = branch;
-        index.commit_id = branch.commit_id;
-        index.added = new TreeSet<>();
+        index = new Index(branch);
 
         deleteBranch(other_branch_name);
 
@@ -214,6 +208,76 @@ public class VcsImpl implements Vcs {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public void clean(Path path) throws IOException {
+        Set<String> tracking = getTrackingNames();
+        Files.walk(path)
+                .filter(Files::isRegularFile)
+                .filter(entry -> !tracking.contains(entry.toString()))
+                .forEach(entry -> {
+                    try {
+                        Files.delete(entry);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
+
+
+    @Override
+    public void reset(Path path) throws IOException {
+        Map<String, VcsBlobLink> committed = getCommittedFiles();
+        if (!committed.containsKey(path.toString())) {
+            throw new IOException("no such committed file");
+        }
+        String blob_name = committed.get(path.toString()).md5_hash;
+        Path blob_path = Paths.get(blobs_dir_path.toString(), blob_name);
+        Files.copy(blob_path, path);
+    }
+
+    @Override
+    public Map<String, String> status(Path path) throws IOException {
+        Map<String, VcsBlobLink> committedFiles = getCommittedFiles();
+        Set<String> committedNames = committedFiles.keySet();
+        ImmutableMap.Builder<String, String> mapBuilder = ImmutableMap.builder();
+        Files.walk(path)
+                .filter(Files::isRegularFile)
+                .forEach(entry -> {
+                    String state = "untracked";
+                    if (index.added.contains(entry.toString())) {
+                        state = "added";
+                    } else if (index.removed.contains(entry.toString())) {
+                        state = "removed";
+                    } else if (committedNames.contains(entry.toString())) {
+                        String fileHash = committedFiles.get(entry.toString()).md5_hash;
+                        if (getBlob(entry).md5_hash.equals(fileHash)) {
+                            state = "committed";
+                        } else {
+                            state = "modified";
+                        }
+                    }
+                    mapBuilder.put(entry.toString(), state);
+                });
+        return mapBuilder.build();
+    }
+
+    @Override
+    public void rm(Path path) throws IOException {
+        readIndex();
+
+        if (!getTrackingNames().contains(path.toString())) {
+            throw new IOException("no such tracking file");
+        }
+        Files.delete(path);
+        if (index.added.contains(path.toString())) {
+            index.added.remove(path.toString());
+        } else {
+            index.removed.add(path.toString());
+        }
+
+        writeIndex();
+    }
+
     private void writeIndex() throws IOException {
         if (index.branch != null) {
             index.commit_id = index.branch.commit_id;
@@ -259,9 +323,32 @@ public class VcsImpl implements Vcs {
         return (VcsBranch) readObject(branch_path);
     }
 
+    private Set<String> getTrackingNames() throws IOException {
+        Set<String> added = index.added;
+        Set<String> committed = getCommittedFiles().keySet();
+        return new ImmutableSet.Builder<String>().addAll(added).addAll(committed).build();
+    }
+
+    private Map<String, VcsBlobLink> getCommittedFiles() throws IOException {
+        Map<String, VcsBlobLink> committed = readCommit(index.commit_id).files;
+        return Maps.filterKeys(committed, path -> !index.removed.contains(path));
+    }
+
     private static class Index implements Serializable {
         private Set<String> added = new TreeSet<>();
+        private Set<String> removed = new TreeSet<>();
         private VcsBranch branch;
         private long commit_id = VcsCommit.nullCommit.id;
+
+        Index(long commit_id) {
+            this.commit_id = commit_id;
+            this.branch = null;
+        }
+
+        Index(VcsBranch branch) {
+            this.branch = branch;
+            this.commit_id = branch.commit_id;
+        }
     }
+
 }
