@@ -4,6 +4,8 @@ import com.google.common.collect.*;
 import com.maxim.vcs_objects.VcsBlobLink;
 import com.maxim.vcs_objects.VcsBranch;
 import com.maxim.vcs_objects.VcsCommit;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -21,6 +23,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * Implements methods of Interface VCS
  */
 public class VcsImpl implements Vcs {
+    @NotNull
     private Index index = new Index(VcsCommit.nullCommit.id);
 
     public VcsImpl() throws IOException {
@@ -36,8 +39,9 @@ public class VcsImpl implements Vcs {
         }
     }
 
+    @NotNull
     @Override
-    public VcsCommit commit(String message) throws IOException {
+    public VcsCommit commit(@NotNull String message) throws IOException {
         readIndex();
 
         if (index.branch == null) {
@@ -92,7 +96,7 @@ public class VcsImpl implements Vcs {
     }
 
     @Override
-    public void checkoutBranch(String branch_name) throws IOException {
+    public void checkoutBranch(@NotNull String branch_name) throws IOException {
         readIndex();
 
         VcsBranch branch = readBranch(branch_name);
@@ -104,14 +108,14 @@ public class VcsImpl implements Vcs {
     }
 
     @Override
-    public void add(Path path) throws IOException {
+    public void add(@NotNull Path path) throws IOException {
         readIndex();
         index.added.add(path.toString());
         writeIndex();
     }
 
     @Override
-    public void merge(String other_branch_name) throws IOException {
+    public void merge(@NotNull String other_branch_name) throws IOException {
         readIndex();
 
         if (index.branch == null) {
@@ -150,7 +154,7 @@ public class VcsImpl implements Vcs {
     }
 
     @Override
-    public void createBranch(String branch_name) throws IOException {
+    public void createBranch(@NotNull String branch_name) throws IOException {
         readIndex();
 
         Path path = Paths.get(branches_dir_path + "", branch_name);
@@ -166,7 +170,7 @@ public class VcsImpl implements Vcs {
     }
 
     @Override
-    public void deleteBranch(String branch_name) throws IOException {
+    public void deleteBranch(@NotNull String branch_name) throws IOException {
         readIndex();
 
         Path branch_path = Paths.get(branches_dir_path + "", branch_name);
@@ -177,6 +181,7 @@ public class VcsImpl implements Vcs {
         writeIndex();
     }
 
+    @NotNull
     @Override
     public List<VcsCommit> logCommits() throws IOException {
         try {
@@ -201,6 +206,7 @@ public class VcsImpl implements Vcs {
         }
     }
 
+    @NotNull
     @Override
     public List<String> logBranches() throws IOException {
         return Files.walk(branches_dir_path)
@@ -211,7 +217,7 @@ public class VcsImpl implements Vcs {
     }
 
     @Override
-    public void clean(Path path) throws IOException {
+    public void clean(@NotNull Path path) throws IOException {
         Set<String> tracking = getTrackingNames();
         Files.walk(path)
                 .filter(Files::isRegularFile)
@@ -225,9 +231,8 @@ public class VcsImpl implements Vcs {
                 });
     }
 
-
     @Override
-    public void reset(Path path) throws IOException {
+    public void reset(@NotNull Path path) throws IOException {
         Map<String, VcsBlobLink> committed = getCommittedFiles();
         if (!committed.containsKey(path.toString())) {
             throw new IOException("no such committed file");
@@ -237,8 +242,9 @@ public class VcsImpl implements Vcs {
         Files.copy(blob_path, path);
     }
 
+    @NotNull
     @Override
-    public Map<Path, String> status(Path path) throws IOException {
+    public Map<Path, String> status(@NotNull Path path) throws IOException {
         Map<String, VcsBlobLink> committedFiles = getCommittedFiles();
         Set<String> committedNames = committedFiles.keySet();
         ImmutableMap.Builder<Path, String> mapBuilder = ImmutableMap.builder();
@@ -264,7 +270,7 @@ public class VcsImpl implements Vcs {
     }
 
     @Override
-    public void rm(Path path) throws IOException {
+    public void rm(@NotNull Path path) throws IOException {
         readIndex();
 
         if (!getTrackingNames().contains(path.toString())) {
@@ -291,7 +297,7 @@ public class VcsImpl implements Vcs {
         index = (Index) readObject(index_file_path);
     }
 
-    private void writeCommit(VcsCommit commit) throws IOException {
+    private void writeCommit(@NotNull VcsCommit commit) throws IOException {
         Path path = Paths.get(commits_dir_path + "", commit.id + "");
         writeObject(commit, path);
     }
@@ -301,6 +307,7 @@ public class VcsImpl implements Vcs {
         return (VcsCommit) FileUtil.readObject(path);
     }
 
+    @NotNull
     private Map<String, VcsBlobLink> loadAdded() throws IOException {
         Path path = Paths.get(".");
         try {
@@ -330,25 +337,30 @@ public class VcsImpl implements Vcs {
         writeObject(branch, branch_path);
     }
 
-    private VcsBranch readBranch(String branch_name) throws IOException {
+    private VcsBranch readBranch(@NotNull String branch_name) throws IOException {
         Path branch_path = Paths.get(branches_dir_path.toString(), branch_name);
         return (VcsBranch) readObject(branch_path);
     }
 
+    @NotNull
     private Set<String> getTrackingNames() throws IOException {
         Set<String> added = index.added;
         Set<String> committed = getCommittedFiles().keySet();
         return new ImmutableSet.Builder<String>().addAll(added).addAll(committed).build();
     }
 
+    @NotNull
     private Map<String, VcsBlobLink> getCommittedFiles() throws IOException {
         Map<String, VcsBlobLink> committed = readCommit(index.commit_id).files;
         return Maps.filterKeys(committed, path -> !index.removed.contains(path));
     }
 
     private static class Index implements Serializable {
+        @NotNull
         private Set<String> added = new TreeSet<>();
+        @NotNull
         private Set<String> removed = new TreeSet<>();
+        @Nullable
         private VcsBranch branch;
         private long commit_id = VcsCommit.nullCommit.id;
 
@@ -357,7 +369,7 @@ public class VcsImpl implements Vcs {
             this.branch = null;
         }
 
-        Index(VcsBranch branch) {
+        Index(@NotNull VcsBranch branch) {
             this.branch = branch;
             this.commit_id = branch.commit_id;
         }

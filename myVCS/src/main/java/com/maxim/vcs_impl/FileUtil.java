@@ -1,6 +1,7 @@
 package com.maxim.vcs_impl;
 
 import com.maxim.vcs_objects.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -26,7 +27,8 @@ public class FileUtil {
      * creates VcsBlob from file
      * throws RuntimeException
      */
-    public static VcsBlob getBlob(Path path) {
+    @NotNull
+    public static VcsBlob getBlob(@NotNull Path path) {
         try {
             if (!Files.isRegularFile(path)) {
                 throw new IOException("not suck file");
@@ -41,7 +43,8 @@ public class FileUtil {
      * creates VcsBlobLink from file
      * throws RuntimeException
      */
-    public static VcsBlobLink addBlob(Path path) {
+    @NotNull
+    public static VcsBlobLink addBlob(@NotNull Path path) {
         try {
             VcsBlob blob = getBlob(path);
             Path blob_path = Paths.get(blobs_dir_path + "", blob.md5_hash);
@@ -59,7 +62,7 @@ public class FileUtil {
     /**
      * serializes object to path
      */
-    public static void writeObject(Object object, Path path) throws IOException {
+    public static void writeObject(@NotNull Object object, @NotNull Path path) throws IOException {
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             ObjectOutput out = new ObjectOutputStream(bos);
             out.writeObject(object);
@@ -78,13 +81,14 @@ public class FileUtil {
     /**
      * deserialize object from path
      */
-    public static Object readObject(Path path) throws IOException  {
+    @NotNull
+    public static Object readObject(@NotNull Path path) throws IOException  {
         try (FileInputStream fin = new FileInputStream(path.toString())) {
             ObjectInput ois = new ObjectInputStream(fin);
             return ois.readObject();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-        return null;
+        throw new RuntimeException();
     }
 }

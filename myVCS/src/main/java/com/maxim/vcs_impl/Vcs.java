@@ -1,6 +1,7 @@
 package com.maxim.vcs_impl;
 
 import com.maxim.vcs_objects.VcsCommit;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -22,7 +23,8 @@ public interface Vcs {
      * returns new commit
      */
 
-    VcsCommit commit(String message) throws IOException;
+    @NotNull
+    VcsCommit commit(@NotNull String message) throws IOException;
 
     /**
      * if such commit exists
@@ -40,67 +42,70 @@ public interface Vcs {
      *   throws an Exception
      */
 
-    void checkoutBranch(String branch_name) throws IOException;
+    void checkoutBranch(@NotNull String branch_name) throws IOException;
 
     /**
      * puts file if absent in list tracking files
      */
 
-    void add(Path path) throws IOException;
+    void add(@NotNull Path path) throws IOException;
 
     /**
      * removes branch
      */
 
-    void deleteBranch(String branch_name) throws IOException;
+    void deleteBranch(@NotNull String branch_name) throws IOException;
 
     /**
      * returns list, which contains all commits
      */
 
+    @NotNull
     List<VcsCommit> logCommits() throws IOException;
 
     /**
      * returns list, which contains all branches names
      */
 
+    @NotNull
     List<String> logBranches() throws IOException;
 
     /**
      * merges current branch with other_branch, deletes other_branch
      */
 
-    void merge(String other_branch) throws IOException;
+    void merge(@NotNull String other_branch) throws IOException;
 
     /**
      * creates a new branch with name other_branch_name,
      * branch new branch points to current commit
      */
 
-    void createBranch(String other_branch_name) throws IOException;
+    void createBranch(@NotNull String other_branch_name) throws IOException;
 
     /**
      * resets file to previous version, if file staged
      * otherwise throws an exception
      */
 
-    void reset(Path path) throws IOException;
+    void reset(@NotNull Path path) throws IOException;
 
     /**
      * shows status: (path to file, "untracked" | "added" | "removed" | "committed" | "modified"
      */
-    Map<Path, String> status(Path path) throws IOException;
+    @NotNull
+    Map<Path, String> status(@NotNull Path path) throws IOException;
 
     /**
      * removes file from path, also removes file from working copy
      */
-    void rm(Path path) throws IOException;
+    void rm(@NotNull Path path) throws IOException;
 
     /**
      * removes all untracked files
      */
 
-    void clean(Path path) throws IOException;
+    void clean(@NotNull Path path) throws IOException;
 
     /**
      * returns name of current branch, if it exists, otherwise "null"

@@ -2,6 +2,7 @@ package com.maxim.vcs_objects;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.*;
@@ -13,13 +14,13 @@ import java.util.*;
 
 public class VcsCommit implements Serializable {
     public final long id;
-    public final String message;
+    public final @NotNull String message;
     public final long date;
-    public final List<Long> parents_ids;
-    public final Map<String, VcsBlobLink> files;
+    public final @NotNull List<Long> parents_ids;
+    public final @NotNull Map<String, VcsBlobLink> files;
     public final static VcsCommit nullCommit = new VcsCommit();
 
-    public VcsCommit(String message, List<Long> parents_ids, Map<String, VcsBlobLink> files) {
+    public VcsCommit(@NotNull String message, @NotNull List<Long> parents_ids, @NotNull Map<String, VcsBlobLink> files) {
         id = Math.abs(new Random().nextLong());
         this.message = message;
         this.parents_ids = ImmutableList.copyOf(parents_ids);
@@ -27,6 +28,7 @@ public class VcsCommit implements Serializable {
         this.date = new Date().getTime();
     }
 
+    @NotNull
     @Override
     public String toString() {
         return String.valueOf(id) + "\n" +
