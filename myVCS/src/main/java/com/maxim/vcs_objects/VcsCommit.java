@@ -45,4 +45,12 @@ public class VcsCommit implements Serializable {
         this.files = ImmutableMap.of();
         this.date = 0;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == null || !(other instanceof VcsCommit)) {
+            return false;
+        }
+        return id == ((VcsCommit) other).id;
+    }
 }

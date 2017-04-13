@@ -77,8 +77,8 @@ public interface Vcs {
     void merge(@NotNull String other_branch) throws IOException;
 
     /**
-     * creates a new branch with name other_branch_name,
-     * branch new branch points to current commit
+     * creates a new branch with name other_branch_name and checkouts that branch
+     * new branch points to current commit
      */
 
     void createBranch(@NotNull String other_branch_name) throws IOException;

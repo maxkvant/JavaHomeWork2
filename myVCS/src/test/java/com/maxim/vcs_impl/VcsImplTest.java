@@ -14,6 +14,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -78,20 +79,42 @@ public class VcsImplTest {
 
         vcs.add(paths.get(0));
         vcs.add(paths.get(1));
-
         assertThat(getAdded.call(), containsInAnyOrder(paths.get(0), paths.get(1)));
-
         vcs.commit("message");
         assertThat(getAdded.call().size(), equalTo(0));
-
         vcs.add(paths.get(0));
         vcs.add(paths.get(2));
-
-        assertThat(getAdded.call().size(), equalTo(1));
         assertThat(getAdded.call(), containsInAnyOrder( paths.get(2)));
-        assertThat(getAdded.call().size(), equalTo(1));
     }
 
+    @Test
+    public void logTest() throws IOException {
+        final Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
+        List<Path> paths = initFolder();
+
+        assertThat(vcs.getCurrentBranchName(), equalTo("null"));
+        assertThat(vcs.logBranches().size(), equalTo(0));
+
+        vcs.createBranch("master");
+        vcs.createBranch("develop");
+
+        assertThat(vcs.logBranches(), containsInAnyOrder("master", "develop"));
+        assertThat(vcs.getCurrentBranchName(), equalTo("develop"));
+
+        assertThat(vcs.logCommits(), containsInAnyOrder(VcsCommit.nullCommit));
+
+        List<Long> commits = new ArrayList<>();
+        commits.add(VcsCommit.nullCommit.id);
+
+        for (int i = 0; i < 10; i++) {
+            commits.add(vcs.commit("message").id);
+        }
+
+        assertThat(vcs.logCommits().size(), equalTo(commits.size()));
+
+        vcs.merge("master");
+        assertThat(vcs.logBranches(), containsInAnyOrder("develop"));
+    }
 
     private List<Path> initFolder() throws IOException {
         List<Path> res = new ArrayList<>();

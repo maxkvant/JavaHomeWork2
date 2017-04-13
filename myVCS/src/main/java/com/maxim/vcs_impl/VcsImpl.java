@@ -71,7 +71,6 @@ public class VcsImpl implements Vcs {
 
         VcsCommit new_commit = new VcsCommit(message, parents_ids, currentFiles);
         writeCommit(new_commit);
-        System.out.println(new_commit.files);
 
         index.branch = index.branch.changeCommit(new_commit.id);
         index = new Index(index.branch);
@@ -312,6 +311,16 @@ public class VcsImpl implements Vcs {
         writeIndex();
     }
 
+    @Override
+    public String getCurrentBranchName() {
+        return index.branch == null ? "null" : index.branch.name;
+    }
+
+    @Override
+    public long getCurrentCommitId() {
+        return index.commit_id;
+    }
+
     private void writeIndex() throws IOException {
         if (index.branch != null) {
             index.commit_id = index.branch.commit_id;
@@ -336,7 +345,6 @@ public class VcsImpl implements Vcs {
     @NotNull
     private Map<String, VcsBlobLink> loadAdded() throws IOException {
         try {
-            System.out.println(index.added);
             return Files.walk(root_path)
                     .filter(Files::isRegularFile)
                     .filter(entry -> index.added.contains(entry.toString()))
@@ -346,16 +354,6 @@ public class VcsImpl implements Vcs {
         } catch (RuntimeException e) {
             throw (IOException) e.getCause();
         }
-    }
-
-    @Override
-    public String getCurrentBranchName() {
-        return String.valueOf(index.branch);
-    }
-
-    @Override
-    public long getCurrentCommitId() {
-        return index.commit_id;
     }
 
     private void writeBranch(VcsBranch branch) throws IOException {
