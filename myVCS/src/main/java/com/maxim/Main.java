@@ -21,7 +21,7 @@ public class Main {
     {
         Vcs vcs1 = null;
         try {
-            vcs1 = new VcsImpl();
+            vcs1 = new VcsImpl(Paths.get("."));
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("failed to init vcs");
@@ -97,13 +97,13 @@ public class Main {
             new Command(1, "clean") {
                 @Override
                 public void execute(@NotNull String[] args) throws IOException {
-                    vcs.clean(Paths.get("."));
+                    vcs.clean();
                 }
             },
             new Command(1, "status") {
                 @Override
                 public void execute(@NotNull String[] args) throws IOException {
-                    vcs.status(Paths.get("."))
+                    vcs.status()
                             .forEach((key, value) -> System.out.println(key + " " + value));
                 }
             },

@@ -16,4 +16,5 @@ dependencies {
     compile group: 'com.google.guava', name: 'guava', version: '19.0'
     compile group: 'commons-codec', name: 'commons-codec', version: '1.5'
     compile group: 'org.mockito', name: 'mockito-all', version: '1.8.4'
+    compile 'com.intellij:annotations:+@jar'
 }

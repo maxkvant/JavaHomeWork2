@@ -1,7 +1,9 @@
 package com.maxim.vcs_impl;
 
 import com.maxim.vcs_objects.VcsCommit;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -10,9 +12,14 @@ import java.util.TreeSet;
 
 
 public class VcsImplTest {
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Test
     public void test() throws Exception {
-        Vcs vcs = new VcsImpl();
+        System.out.println("root " + temporaryFolder.getRoot().getPath());
+
+        Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
 
         Set<String> set1 = new TreeSet<>(
                 Arrays.asList("./.idea/uiDesigner.xml",
@@ -43,5 +50,9 @@ public class VcsImplTest {
 
         vcs.merge("1");
         vcs.deleteBranch("2");
+    }
+
+    public void statusTest() {
+
     }
 }

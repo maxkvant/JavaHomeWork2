@@ -12,16 +12,11 @@ import java.nio.file.Paths;
  * Class contains static methods to work with files
  */
 public class FileUtil {
-    private static final String vcs_dir = ".vcs";
-    private static final String blobs_dir = "blobs";
-    private static final String commits_dir = "commits";
-    private static final String branches_dir = "branches";
-    private static final String index_file = "index";
-
-    public static final Path blobs_dir_path = Paths.get(".", vcs_dir, blobs_dir);
-    public static final Path commits_dir_path = Paths.get(".", vcs_dir, commits_dir);
-    public static final Path branches_dir_path = Paths.get(".", vcs_dir, branches_dir);
-    public static final Path index_file_path = Paths.get(".", vcs_dir, index_file);
+    public static final String vcs_dir = ".vcs";
+    public static final String blobs_dir = "blobs";
+    public static final String commits_dir = "commits";
+    public static final String branches_dir = "branches";
+    public static final String index_file = "index";
 
     /**
      * creates VcsBlob from file
@@ -31,7 +26,7 @@ public class FileUtil {
     public static VcsBlob getBlob(@NotNull Path path) {
         try {
             if (!Files.isRegularFile(path)) {
-                throw new IOException("not suck file");
+                throw new IOException("not such file");
             }
             return new VcsBlob(Files.readAllBytes(path));
         } catch (IOException e) {
@@ -44,10 +39,10 @@ public class FileUtil {
      * throws RuntimeException
      */
     @NotNull
-    public static VcsBlobLink addBlob(@NotNull Path path) {
+    public static VcsBlobLink addBlob(@NotNull Path path, @NotNull Path blobs_dir) {
         try {
             VcsBlob blob = getBlob(path);
-            Path blob_path = Paths.get(blobs_dir_path + "", blob.md5_hash);
+            Path blob_path = Paths.get(blobs_dir + "", blob.md5_hash);
             if (!Files.exists(blob_path)) {
                 Files.createFile(blob_path);
                 Files.write(blob_path, blob.bytes);

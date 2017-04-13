@@ -25,8 +25,23 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class VcsImpl implements Vcs {
     @NotNull
     private Index index = new Index(VcsCommit.nullCommit.id);
+    @NotNull
+    private final Path root_path;
 
-    public VcsImpl() throws IOException {
+    private final Path blobs_dir_path;
+    private final Path commits_dir_path;
+    private final Path branches_dir_path;
+    private final Path index_file_path;
+
+
+    public VcsImpl(@NotNull Path root_path) throws IOException {
+        this.root_path = root_path.normalize();
+
+        blobs_dir_path = Paths.get(root_path.toString(), vcs_dir, blobs_dir);
+        commits_dir_path = Paths.get(root_path.toString(), vcs_dir, commits_dir);
+        branches_dir_path = Paths.get(root_path.toString(), vcs_dir, branches_dir);
+        index_file_path = Paths.get(root_path.toString(), vcs_dir, index_file);
+
         Files.createDirectories(commits_dir_path);
         Files.createDirectories(blobs_dir_path);
         Files.createDirectories(branches_dir_path);
@@ -110,7 +125,11 @@ public class VcsImpl implements Vcs {
     @Override
     public void add(@NotNull Path path) throws IOException {
         readIndex();
-        index.added.add(path.toString());
+        //if (Files.isRegularFile(path)) {
+            index.added.add(path.toString());
+        //} else {
+        //    throw new IOException(path + " isn't regular file");
+        //}
         writeIndex();
     }
 
@@ -217,9 +236,9 @@ public class VcsImpl implements Vcs {
     }
 
     @Override
-    public void clean(@NotNull Path path) throws IOException {
+    public void clean() throws IOException {
         Set<String> tracking = getTrackingNames();
-        Files.walk(path)
+        Files.walk(root_path)
                 .filter(Files::isRegularFile)
                 .filter(entry -> !tracking.contains(entry.toString()))
                 .forEach(entry -> {
@@ -244,11 +263,11 @@ public class VcsImpl implements Vcs {
 
     @NotNull
     @Override
-    public Map<Path, String> status(@NotNull Path path) throws IOException {
+    public Map<Path, String> status() throws IOException {
         Map<String, VcsBlobLink> committedFiles = getCommittedFiles();
         Set<String> committedNames = committedFiles.keySet();
         ImmutableMap.Builder<Path, String> mapBuilder = ImmutableMap.builder();
-        Files.walk(path)
+        Files.walk(root_path)
                 .filter(Files::isRegularFile)
                 .forEach(entry -> {
                     String state = "untracked";
@@ -273,14 +292,17 @@ public class VcsImpl implements Vcs {
     public void rm(@NotNull Path path) throws IOException {
         readIndex();
 
-        if (!getTrackingNames().contains(path.toString())) {
-            throw new IOException("no such tracking file");
+        if (!Files.exists(path) || !Files.isRegularFile(path)) {
+            throw new IOException("no such regular file " + path);
         }
         Files.delete(path);
-        if (index.added.contains(path.toString())) {
-            index.added.remove(path.toString());
-        } else {
-            index.removed.add(path.toString());
+
+        if (getTrackingNames().contains(path.toString())) {
+            if (index.added.contains(path.toString())) {
+                index.added.remove(path.toString());
+            } else {
+                index.removed.add(path.toString());
+            }
         }
 
         writeIndex();
@@ -309,14 +331,13 @@ public class VcsImpl implements Vcs {
 
     @NotNull
     private Map<String, VcsBlobLink> loadAdded() throws IOException {
-        Path path = Paths.get(".");
         try {
-            return Files.walk(path)
+            return Files.walk(root_path)
                     .filter(Files::isRegularFile)
                     .filter(entry -> index.added.contains(entry.toString()))
                     .collect(Collectors.toMap(
                             Path::toString,
-                            FileUtil::addBlob));
+                            path1 -> FileUtil.addBlob(path1, blobs_dir_path)));
         } catch (RuntimeException e) {
             throw (IOException) e.getCause();
         }
@@ -374,5 +395,4 @@ public class VcsImpl implements Vcs {
             this.commit_id = branch.commit_id;
         }
     }
-
 }

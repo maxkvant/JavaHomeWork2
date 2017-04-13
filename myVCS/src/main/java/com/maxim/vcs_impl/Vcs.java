@@ -94,7 +94,7 @@ public interface Vcs {
      * shows status: (path to file, "untracked" | "added" | "removed" | "committed" | "modified"
      */
     @NotNull
-    Map<Path, String> status(@NotNull Path path) throws IOException;
+    Map<Path, String> status() throws IOException;
 
     /**
      * removes file from path, also removes file from working copy
@@ -105,7 +105,7 @@ public interface Vcs {
      * removes all untracked files
      */
 
-    void clean(@NotNull Path path) throws IOException;
+    void clean() throws IOException;
 
     /**
      * returns name of current branch, if it exists, otherwise "null"
