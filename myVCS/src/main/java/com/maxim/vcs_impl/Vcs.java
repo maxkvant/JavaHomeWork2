@@ -37,7 +37,7 @@ public interface Vcs {
 
     /**
      * if such branch exists
-     *   checkouts commit with name=branch_name
+     *   checkouts commit which is head of branch with name=branch_name
      * otherwise
      *   throws an Exception
      */

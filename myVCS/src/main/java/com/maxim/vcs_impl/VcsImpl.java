@@ -71,6 +71,7 @@ public class VcsImpl implements Vcs {
 
         VcsCommit new_commit = new VcsCommit(message, parents_ids, currentFiles);
         writeCommit(new_commit);
+        System.out.println(new_commit.files);
 
         index.branch = index.branch.changeCommit(new_commit.id);
         index = new Index(index.branch);
@@ -125,11 +126,13 @@ public class VcsImpl implements Vcs {
     @Override
     public void add(@NotNull Path path) throws IOException {
         readIndex();
-        //if (Files.isRegularFile(path)) {
-            index.added.add(path.toString());
-        //} else {
+
+        if (!Files.isRegularFile(path)){
         //    throw new IOException(path + " isn't regular file");
-        //}
+        }
+        if (!getTrackingNames().contains(path.toString())) {
+            index.added.add(path.toString());
+        }
         writeIndex();
     }
 
@@ -177,7 +180,6 @@ public class VcsImpl implements Vcs {
         readIndex();
 
         Path path = Paths.get(branches_dir_path + "", branch_name);
-        System.out.println(path);
         if (Files.exists(path)) {
             throw new IOException("branch exits");
         }
@@ -264,6 +266,8 @@ public class VcsImpl implements Vcs {
     @NotNull
     @Override
     public Map<Path, String> status() throws IOException {
+        readIndex();
+
         Map<String, VcsBlobLink> committedFiles = getCommittedFiles();
         Set<String> committedNames = committedFiles.keySet();
         ImmutableMap.Builder<Path, String> mapBuilder = ImmutableMap.builder();
@@ -332,6 +336,7 @@ public class VcsImpl implements Vcs {
     @NotNull
     private Map<String, VcsBlobLink> loadAdded() throws IOException {
         try {
+            System.out.println(index.added);
             return Files.walk(root_path)
                     .filter(Files::isRegularFile)
                     .filter(entry -> index.added.contains(entry.toString()))
