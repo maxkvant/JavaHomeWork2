@@ -2,7 +2,12 @@ package com.maxim.vcs_objects;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
-public class VcsBlob extends VcsObject {
+import java.io.Serializable;
+
+/**
+ * stores file, it's hash
+ */
+public class VcsBlob implements Serializable {
     public final byte[] bytes;
     public final String md5_hash;
 

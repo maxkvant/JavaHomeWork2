@@ -1,17 +1,14 @@
 package com.maxim;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableSet;
 import com.maxim.vcs_impl.Vcs;
 import com.maxim.vcs_impl.VcsImpl;
-import com.maxim.vcs_objects.VcsCommit;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class Main {
@@ -31,53 +28,93 @@ public class Main {
     private final String[] args;
 
     private final List<Command> commands = ImmutableList.of(
-            new Command(true, "path", "add") {
+            new Command(1, "add", "<path>") {
                 @Override
-                public void execute() throws IOException {
-                    vcs.add(Paths.get(arg));
+                public void execute(String[] args) throws IOException {
+                    Path path = Paths.get(parseArgs(args).get(0));
+                    vcs.add(path);
                 }
             },
 
-            new Command(true, "message", "commit") {
+            new Command(1, "commit", "message") {
                 @Override
-                public void execute() throws IOException {
-                    vcs.commit(arg);
+                public void execute(String[] args) throws IOException {
+                    vcs.commit(parseArgs(args).get(0));
                 }
             },
-            new Command(true, "branch_name", "create-branch") {
+            new Command(1, "create-branch", "<branch name>") {
                 @Override
-                public void execute() throws IOException {
-                    vcs.createBranch(arg);
+                public void execute(String[] args) throws IOException {
+                    vcs.createBranch(parseArgs(args).get(0));
                 }
             },
-            new Command(true,"branch_name", "checkout", "-b") {
+            new Command(2,"checkout", "-b", "<branch name>") {
                 @Override
-                public void execute() throws IOException {
-                    vcs.checkoutBranch(arg);
+                public void execute(String[] args) throws IOException {
+                    vcs.checkoutBranch(parseArgs(args).get(0));
                 }
             },
-            new Command(true, "commit_id", "checkout", "-c") {
+            new Command(2, "checkout", "-c", "<commit id>") {
                 @Override
-                public void execute() throws IOException {
-                    vcs.checkoutCommit(Long.parseLong(arg));
+                public void execute(String[] args) throws IOException {
+                    long arg = Long.parseLong(parseArgs(args).get(0));
+                    vcs.checkoutCommit(arg);
                 }
             },
-            new Command(true,"other_branch_name", "merge") {
+            new Command(1,"merge", "<other branch name>") {
                 @Override
-                public void execute() throws IOException {
-                    vcs.merge(arg);
+                public void execute(String[] args) throws IOException {
+                    vcs.merge(parseArgs(args).get(0));
                 }
             },
-            new Command(false, "", "log", "-b") {
+            new Command(2, "log", "-b") {
                 @Override
-                public void execute() throws IOException {
-                    vcs.logBranches().stream().forEach(System.out::println);
+                public void execute(String[] args) throws IOException {
+                    System.out.println("---- current branch:");
+                    System.out.println(vcs.getCurrentBranchName());
+                    System.out.println();
+                    System.out.println("---- all branches:");
+
+                    vcs.logBranches().forEach(System.out::println);
                 }
             },
-            new Command(false, "", "log", "-c") {
+            new Command(2, "log", "-c") {
                 @Override
-                public void execute() throws IOException {
-                    vcs.logCommits().stream().forEach(System.out::println);
+                public void execute(String[] args) throws IOException {
+                    System.out.println("---- current commit:");
+                    System.out.println(vcs.getCurrentCommitId());
+                    System.out.println();
+                    System.out.println("---- all commits:");
+
+                    vcs.logCommits().forEach(System.out::println);
+                }
+            },
+            new Command(1, "clean") {
+                @Override
+                public void execute(String[] args) throws IOException {
+                    vcs.clean(Paths.get("."));
+                }
+            },
+            new Command(1, "status") {
+                @Override
+                public void execute(String[] args) throws IOException {
+                    vcs.status(Paths.get("."))
+                            .entrySet()
+                            .forEach(entry -> System.out.println(entry.getKey() + " " + entry.getValue()));
+                }
+            },
+            new Command(1, "rm", "<path>") {
+                @Override
+                public void execute(String[] args) throws IOException {
+                    Path path = Paths.get(parseArgs(args).get(0));
+                    vcs.rm(path);
+                }
+            },
+            new Command(1, "reset", "<path>")  {
+                @Override
+                public void execute(String[] args) throws IOException {
+                    Path path = Paths.get(parseArgs(args).get(0));
+                    vcs.reset(path);
                 }
             }
     );
@@ -95,7 +132,7 @@ public class Main {
         if (ok_commands.size() == 1) {
             try {
                 Command command = ok_commands.get(0);
-                command.execute();
+                command.execute(args);
             } catch (IOException e){
                 e.printStackTrace();
             }
@@ -107,32 +144,27 @@ public class Main {
     }
 
     private abstract static class Command {
-        private final ImmutableList<String> prefix;
-        private final String arg_name;
-        int args_count;
-        protected String arg;
+        private final ImmutableList<String> args_names;
+        private final int prefix_len;
 
-        public Command(boolean has_arg, String arg_name, String... prefix) {
-            this.prefix = ImmutableList.copyOf(prefix);
-            this.arg_name = arg_name;
-            this.args_count = has_arg ? 1 : 0;
+        public Command(int args_count, String... arg_names) {
+            this.args_names = ImmutableList.copyOf(arg_names);
+            this.prefix_len = args_count;
         }
 
         public String getMessage() {
-            return prefix.stream().collect(Collectors.joining(" ")) + " " + arg_name;
+            return args_names.stream().collect(Collectors.joining(" "));
         }
 
         public boolean check(String[] args) {
-            boolean res = prefix.size() + args_count == args.length &&
-                   ImmutableList.copyOf(args).subList(0, prefix.size()).equals(prefix);
-            arg = (res && args_count == 1) ? args[args.length - 1] : null;
-            return res;
+            return args_names.size() == args.length &&
+                   ImmutableList.copyOf(args).subList(0, prefix_len).equals(args_names.subList(0, prefix_len));
         }
 
-        public void getArg(String[] args) {
-            this.arg = check(args) ? args[args.length - 1] : null;
+        public List<String> parseArgs(String[] args) {
+            return check(args) ? ImmutableList.copyOf(args).subList(prefix_len, args_names.size()) : null;
         }
 
-        public abstract void execute() throws IOException;
+        public abstract void execute(String[] args) throws IOException;
     }
 }

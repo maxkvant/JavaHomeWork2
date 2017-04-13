@@ -7,6 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * Class contains static methods to work with files
+ */
 public class FileUtil {
     private static final String vcs_dir = ".vcs";
     private static final String blobs_dir = "blobs";
@@ -14,12 +17,15 @@ public class FileUtil {
     private static final String branches_dir = "branches";
     private static final String index_file = "index";
 
-    public static final Path vcs_dir_path = Paths.get(".", vcs_dir);
     public static final Path blobs_dir_path = Paths.get(".", vcs_dir, blobs_dir);
     public static final Path commits_dir_path = Paths.get(".", vcs_dir, commits_dir);
     public static final Path branches_dir_path = Paths.get(".", vcs_dir, branches_dir);
     public static final Path index_file_path = Paths.get(".", vcs_dir, index_file);
 
+    /**
+     * creates VcsBlob from file
+     * throws RuntimeException
+     */
     public static VcsBlob getBlob(Path path) {
         try {
             if (!Files.isRegularFile(path)) {
@@ -31,6 +37,10 @@ public class FileUtil {
         }
     }
 
+    /**
+     * creates VcsBlobLink from file
+     * throws RuntimeException
+     */
     public static VcsBlobLink addBlob(Path path) {
         try {
             VcsBlob blob = getBlob(path);
@@ -46,6 +56,9 @@ public class FileUtil {
         }
     }
 
+    /**
+     * serializes object to path
+     */
     public static void writeObject(Object object, Path path) throws IOException {
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             ObjectOutput out = new ObjectOutputStream(bos);
@@ -62,6 +75,9 @@ public class FileUtil {
         }
     }
 
+    /**
+     * deserialize object from path
+     */
     public static Object readObject(Path path) throws IOException  {
         try (FileInputStream fin = new FileInputStream(path.toString())) {
             ObjectInput ois = new ObjectInputStream(fin);

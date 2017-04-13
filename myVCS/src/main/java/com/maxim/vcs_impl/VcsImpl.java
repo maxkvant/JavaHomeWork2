@@ -4,7 +4,6 @@ import com.google.common.collect.*;
 import com.maxim.vcs_objects.VcsBlobLink;
 import com.maxim.vcs_objects.VcsBranch;
 import com.maxim.vcs_objects.VcsCommit;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -17,12 +16,17 @@ import java.util.stream.Collectors;
 import static com.maxim.vcs_impl.FileUtil.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
+
+/**
+ * Implements methods of Interface VCS
+ */
 public class VcsImpl implements Vcs {
     private Index index = new Index(VcsCommit.nullCommit.id);
 
     public VcsImpl() throws IOException {
         Files.createDirectories(commits_dir_path);
         Files.createDirectories(blobs_dir_path);
+        Files.createDirectories(branches_dir_path);
         Files.createDirectories(branches_dir_path);
 
         writeCommit(VcsCommit.nullCommit);
@@ -108,8 +112,6 @@ public class VcsImpl implements Vcs {
 
     @Override
     public void merge(String other_branch_name) throws IOException {
-        //TODO fix repeating code form commit(...)
-
         readIndex();
 
         if (index.branch == null) {
@@ -236,10 +238,10 @@ public class VcsImpl implements Vcs {
     }
 
     @Override
-    public Map<String, String> status(Path path) throws IOException {
+    public Map<Path, String> status(Path path) throws IOException {
         Map<String, VcsBlobLink> committedFiles = getCommittedFiles();
         Set<String> committedNames = committedFiles.keySet();
-        ImmutableMap.Builder<String, String> mapBuilder = ImmutableMap.builder();
+        ImmutableMap.Builder<Path, String> mapBuilder = ImmutableMap.builder();
         Files.walk(path)
                 .filter(Files::isRegularFile)
                 .forEach(entry -> {
@@ -256,7 +258,7 @@ public class VcsImpl implements Vcs {
                             state = "modified";
                         }
                     }
-                    mapBuilder.put(entry.toString(), state);
+                    mapBuilder.put(entry, state);
                 });
         return mapBuilder.build();
     }
@@ -311,6 +313,16 @@ public class VcsImpl implements Vcs {
         } catch (RuntimeException e) {
             throw (IOException) e.getCause();
         }
+    }
+
+    @Override
+    public String getCurrentBranchName() {
+        return String.valueOf(index.branch);
+    }
+
+    @Override
+    public long getCurrentCommitId() {
+        return index.commit_id;
     }
 
     private void writeBranch(VcsBranch branch) throws IOException {

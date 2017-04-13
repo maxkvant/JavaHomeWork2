@@ -1,6 +1,11 @@
 package com.maxim.vcs_objects;
 
-public class VcsBlobLink extends VcsObject implements Comparable {
+import java.io.Serializable;
+
+/**
+ * Stores md5 hash of file
+ */
+public class VcsBlobLink implements Comparable, Serializable {
     public final String md5_hash;
 
     public VcsBlobLink(String md5_hash) {
