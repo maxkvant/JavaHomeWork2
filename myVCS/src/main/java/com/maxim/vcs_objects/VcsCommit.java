@@ -48,9 +48,6 @@ public class VcsCommit implements Serializable {
 
     @Override
     public boolean equals(Object other) {
-        if (other == null || !(other instanceof VcsCommit)) {
-            return false;
-        }
-        return id == ((VcsCommit) other).id;
+        return !(other == null || !(other instanceof VcsCommit)) && id == ((VcsCommit) other).id;
     }
 }

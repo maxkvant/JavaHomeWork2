@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.maxim.vcs_objects.VcsCommit;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -19,6 +20,8 @@ import java.util.stream.Collectors;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
 public class VcsImplTest {
@@ -26,42 +29,7 @@ public class VcsImplTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
-    public void test() throws Exception {
-        Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
-
-        Set<String> set1 = new TreeSet<>(
-                Arrays.asList("./.idea/uiDesigner.xml",
-                        "./.gradle/3.1/taskArtifacts/fileHashes.bin")
-        );
-
-        Set<String> set2 = new TreeSet<>(
-                Arrays.asList("./.idea/uiDesigner.xml",
-                        "./.gradle/3.1/taskArtifacts/fileSnapshots.bin")
-        );
-
-        vcs.createBranch("1");
-        for (int i = 0; i < 2; i++) {
-            for (String path : set1) {
-                vcs.add(Paths.get(path));
-            }
-            VcsCommit commit = vcs.commit("2");
-        }
-
-        vcs.checkoutCommit(0);
-        vcs.createBranch("2");
-        for (int i = 0; i < 2; i++) {
-            for (String path : set2) {
-                vcs.add(Paths.get(path));
-            }
-            VcsCommit commit = vcs.commit("2");
-        }
-
-        vcs.merge("1");
-        vcs.deleteBranch("2");
-    }
-
-    @Test
-    public void addTest() throws Exception {
+    public void addTest1() throws Exception {
         final Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
         List<Path> paths = initFolder();
         vcs.createBranch("branch");
@@ -85,6 +53,13 @@ public class VcsImplTest {
         vcs.add(paths.get(0));
         vcs.add(paths.get(2));
         assertThat(getAdded.call(), containsInAnyOrder( paths.get(2)));
+    }
+
+    @Test(expected = IOException.class)
+    public void addTest2() throws Exception {
+        final Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
+        List<Path> paths = initFolder();
+        vcs.add(Paths.get(paths.get(0) + "", "abrcadabra"));
     }
 
     @Test
@@ -114,6 +89,52 @@ public class VcsImplTest {
 
         vcs.merge("master");
         assertThat(vcs.logBranches(), containsInAnyOrder("develop"));
+    }
+
+    @Test
+    public void commitTest1() throws IOException {
+        final Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
+        List<Path> paths = initFolder();
+        vcs.createBranch("master");
+        Path path1 = paths.get(0);
+        Date date1 = new Date();
+        vcs.add(path1);
+        VcsCommit commit1 = vcs.commit("Hello, world");
+        assertThat(commit1.message, equalTo("Hello, world"));
+        assertThat(commit1.parents_ids, containsInAnyOrder(0L));
+        assertThat(commit1.files.keySet(), containsInAnyOrder(path1.toString()));
+        assertTrue(commit1.date > date1.getTime());
+    }
+
+    @Test(expected=IOException.class)
+    public void commitTest2() throws IOException {
+        final Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
+        vcs.commit("message");
+    }
+
+    @Test
+    public void checkoutTest() throws IOException {
+        final Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
+        List<Path> paths = initFolder();
+        Path path = paths.get(0);
+        vcs.createBranch("master");
+        List<VcsCommit> commits = new ArrayList<>();
+        final int n = 10;
+        for (long i = 0; i < n; i++) {
+            FileUtil.writeObject(i, path);
+            vcs.add(path);
+            commits.add(vcs.commit("Hi"));
+            if (i == 0) {
+                vcs.createBranch("dev");
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            vcs.checkoutCommit(commits.get(i).id);
+            Long value = (Long) FileUtil.readObject(path);
+            assertEquals(Long.valueOf(i), value);
+        }
+        vcs.checkoutBranch("master");
+        assertEquals(0L,  FileUtil.readObject(path));
     }
 
     private List<Path> initFolder() throws IOException {

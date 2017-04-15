@@ -66,7 +66,7 @@ public class VcsImpl implements Vcs {
         Map<String, VcsBlobLink> oldFiles = getCommittedFiles();
         List<Long> parents_ids = Collections.singletonList(index.commit_id);
 
-        Map<String, VcsBlobLink> currentFiles = new TreeMap<>(loadAdded());
+        Map<String, VcsBlobLink> currentFiles = new TreeMap<>(loadFiles());
         oldFiles.forEach(currentFiles::putIfAbsent);
 
         VcsCommit new_commit = new VcsCommit(message, parents_ids, currentFiles);
@@ -127,7 +127,7 @@ public class VcsImpl implements Vcs {
         readIndex();
 
         if (!Files.isRegularFile(path)){
-        //    throw new IOException(path + " isn't regular file");
+            throw new IOException(path + " isn't regular file");
         }
         if (!getTrackingNames().contains(path.toString())) {
             index.added.add(path.toString());
@@ -343,11 +343,12 @@ public class VcsImpl implements Vcs {
     }
 
     @NotNull
-    private Map<String, VcsBlobLink> loadAdded() throws IOException {
+    private Map<String, VcsBlobLink> loadFiles() throws IOException {
+        Set<String> paths = getTrackingNames();
         try {
             return Files.walk(root_path)
                     .filter(Files::isRegularFile)
-                    .filter(entry -> index.added.contains(entry.toString()))
+                    .filter(entry -> paths.contains(entry.toString()))
                     .collect(Collectors.toMap(
                             Path::toString,
                             path1 -> FileUtil.addBlob(path1, blobs_dir_path)));

@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -165,9 +166,9 @@ public class Main {
                    ImmutableList.copyOf(args).subList(0, prefix_len).equals(args_names.subList(0, prefix_len));
         }
 
-        @Nullable
+        @NotNull
         public List<String> parseArgs(@NotNull String[] args) {
-            return check(args) ? ImmutableList.copyOf(args).subList(prefix_len, args_names.size()) : null;
+            return check(args) ? ImmutableList.copyOf(args).subList(prefix_len, args_names.size()) : new ArrayList<>();
         }
 
         public abstract void execute(String[] args) throws IOException;
