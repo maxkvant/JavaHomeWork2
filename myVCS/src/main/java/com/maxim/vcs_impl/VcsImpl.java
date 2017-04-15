@@ -32,6 +32,7 @@ public class VcsImpl implements Vcs {
     private final Path commits_dir_path;
     private final Path branches_dir_path;
     private final Path index_file_path;
+    private final Path vcs_dir_path;
 
 
     public VcsImpl(@NotNull Path root_path) throws IOException {
@@ -41,6 +42,7 @@ public class VcsImpl implements Vcs {
         commits_dir_path = Paths.get(root_path.toString(), vcs_dir, commits_dir);
         branches_dir_path = Paths.get(root_path.toString(), vcs_dir, branches_dir);
         index_file_path = Paths.get(root_path.toString(), vcs_dir, index_file);
+        vcs_dir_path = Paths.get(root_path.toString(), vcs_dir);
 
         Files.createDirectories(commits_dir_path);
         Files.createDirectories(blobs_dir_path);
@@ -136,15 +138,11 @@ public class VcsImpl implements Vcs {
     }
 
     @Override
-    public void merge(@NotNull String other_branch_name) throws IOException {
+    public VcsCommit merge(@NotNull String other_branch_name) throws IOException {
         readIndex();
 
         if (index.branch == null) {
             throw new IOException("Please, checkout branch or create branch");
-        }
-
-        if (index.branch.name.equals(other_branch_name)) {
-            return;
         }
 
         VcsBranch other_branch = readBranch(other_branch_name);
@@ -169,9 +167,13 @@ public class VcsImpl implements Vcs {
 
         index = new Index(branch);
 
-        deleteBranch(other_branch_name);
+        if (!branch.name.equals(other_branch_name)) {
+            deleteBranch(other_branch_name);
+        }
 
         writeIndex();
+
+        return new_commit;
     }
 
     @Override
@@ -185,18 +187,6 @@ public class VcsImpl implements Vcs {
         VcsBranch branch = new VcsBranch(branch_name, index.commit_id);
         writeBranch(branch);
         checkoutBranch(branch_name);
-
-        writeIndex();
-    }
-
-    @Override
-    public void deleteBranch(@NotNull String branch_name) throws IOException {
-        readIndex();
-
-        Path branch_path = Paths.get(branches_dir_path + "", branch_name);
-        if (Files.exists(branch_path)) {
-            Files.delete(branch_path);
-        }
 
         writeIndex();
     }
@@ -241,6 +231,7 @@ public class VcsImpl implements Vcs {
         Set<String> tracking = getTrackingNames();
         Files.walk(root_path)
                 .filter(Files::isRegularFile)
+                .filter(entry -> !entry.startsWith(vcs_dir_path))
                 .filter(entry -> !tracking.contains(entry.toString()))
                 .forEach(entry -> {
                     try {
@@ -259,7 +250,7 @@ public class VcsImpl implements Vcs {
         }
         String blob_name = committed.get(path.toString()).md5_hash;
         Path blob_path = Paths.get(blobs_dir_path.toString(), blob_name);
-        Files.copy(blob_path, path);
+        Files.copy(blob_path, path, REPLACE_EXISTING);
     }
 
     @NotNull
@@ -272,6 +263,7 @@ public class VcsImpl implements Vcs {
         ImmutableMap.Builder<Path, String> mapBuilder = ImmutableMap.builder();
         Files.walk(root_path)
                 .filter(Files::isRegularFile)
+                .filter(entry -> !entry.startsWith(vcs_dir_path))
                 .forEach(entry -> {
                     String state = "untracked";
                     if (index.added.contains(entry.toString())) {
@@ -288,6 +280,7 @@ public class VcsImpl implements Vcs {
                     }
                     mapBuilder.put(entry, state);
                 });
+        index.removed.forEach(entry -> mapBuilder.put(Paths.get(entry), "removed"));
         return mapBuilder.build();
     }
 
@@ -340,6 +333,17 @@ public class VcsImpl implements Vcs {
     private VcsCommit readCommit(long commit_id) throws IOException {
         Path path = Paths.get(commits_dir_path + "", commit_id + "");
         return (VcsCommit) FileUtil.readObject(path);
+    }
+
+    private void deleteBranch(@NotNull String branch_name) throws IOException {
+        readIndex();
+
+        Path branch_path = Paths.get(branches_dir_path + "", branch_name);
+        if (Files.exists(branch_path)) {
+            Files.delete(branch_path);
+        }
+
+        writeIndex();
     }
 
     @NotNull

@@ -1,10 +1,8 @@
 package com.maxim.vcs_impl;
 
-import com.google.common.collect.ImmutableSet;
 import com.maxim.vcs_objects.VcsCommit;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -14,14 +12,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
+import static junit.framework.TestCase.assertFalse;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 public class VcsImplTest {
@@ -135,6 +135,115 @@ public class VcsImplTest {
         }
         vcs.checkoutBranch("master");
         assertEquals(0L,  FileUtil.readObject(path));
+    }
+
+    @Test
+    public void mergeTest() throws IOException {
+        final Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
+        List<Path> paths = initFolder();
+        Path path = paths.get(0);
+        class InitBranch implements Function<String, VcsCommit> {
+            final int value;
+            final Vcs vcs;
+
+            public InitBranch(int value, Vcs vcs) {
+                this.value = value;
+                this.vcs = vcs;
+            }
+
+            @Override
+            public VcsCommit apply(String name) {
+                try {
+                    vcs.checkoutCommit(VcsCommit.nullCommit.id);
+                    vcs.createBranch(name);
+                    FileUtil.writeObject(value, path);
+                    vcs.add(path);
+                    return vcs.commit("commit");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        VcsCommit commit1 = new InitBranch(10, vcs).apply("dev");
+        VcsCommit commit2 = new InitBranch(10, vcs).apply("test");
+        VcsCommit commit = vcs.merge("dev");
+        assertThat(commit.parents_ids, containsInAnyOrder(commit1.id, commit2.id));
+        assertEquals("test", vcs.getCurrentBranchName());
+        try {
+            new InitBranch(11, vcs).apply("dev2");
+            vcs.merge("test");
+            fail();
+        } catch (Exception e) {
+            assertEquals(IOException.class, e.getClass());
+        }
+    }
+
+    @Test
+    public void resetTest() throws IOException {
+        final Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
+        List<Path> paths = initFolder();
+        Path path = paths.get(0);
+        vcs.createBranch("master");
+        FileUtil.writeObject("hello", path);
+        vcs.add(path);
+        vcs.commit("");
+        FileUtil.writeObject("hello!", path);
+        vcs.reset(path);
+        assertThat(FileUtil.readObject(path), equalTo("hello"));
+    }
+
+    @Test
+    public void statusTest() throws IOException {
+        final Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
+        List<Path> paths = initFolder();
+        vcs.createBranch("master");
+
+        vcs.add(paths.get(0));
+        vcs.add(paths.get(1));
+        assertThat(vcs.status().values(), containsInAnyOrder("added", "added", "untracked", "untracked"));
+
+        vcs.commit("");
+        assertThat(vcs.status().values(), containsInAnyOrder("committed", "committed", "untracked", "untracked"));
+
+        vcs.rm(paths.get(0));
+        assertThat(vcs.status().values(), containsInAnyOrder("removed", "committed", "untracked", "untracked"));
+
+        FileUtil.writeObject("hey", paths.get(1));
+        assertThat(vcs.status().values(), containsInAnyOrder("removed", "modified", "untracked", "untracked"));
+    }
+
+    @Test
+    public void rmTest() throws IOException {
+        final Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
+        List<Path> paths = initFolder();
+        vcs.rm(paths.get(3));
+        assertFalse(Files.exists(paths.get(3)));
+
+        vcs.createBranch("master");
+        vcs.add(paths.get(0));
+        VcsCommit commit = vcs.commit("");
+        vcs.rm(paths.get(0));
+        vcs.add(paths.get(1));
+        vcs.commit("");
+        assertFalse(Files.exists(paths.get(0)));
+
+        vcs.checkoutCommit(commit.id);
+        assertTrue(Files.exists(paths.get(0)));
+        assertFalse(Files.exists(paths.get(1)));
+    }
+
+    @Test
+    public void cleanTest() throws IOException {
+        final Vcs vcs = new VcsImpl(Paths.get(temporaryFolder.getRoot().getPath()));
+        List<Path> paths = initFolder();
+
+        vcs.createBranch("master");
+        vcs.add(paths.get(0));
+        vcs.add(paths.get(2));
+        vcs.commit("");
+        vcs.clean();
+
+        assertThat(vcs.status().values(), containsInAnyOrder("committed", "committed"));
     }
 
     private List<Path> initFolder() throws IOException {

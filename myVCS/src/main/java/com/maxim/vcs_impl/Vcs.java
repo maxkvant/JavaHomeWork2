@@ -51,12 +51,6 @@ public interface Vcs {
     void add(@NotNull Path path) throws IOException;
 
     /**
-     * removes branch
-     */
-
-    void deleteBranch(@NotNull String branch_name) throws IOException;
-
-    /**
      * returns list, which contains all commits
      */
 
@@ -74,7 +68,7 @@ public interface Vcs {
      * merges current branch with other_branch, deletes other_branch
      */
 
-    void merge(@NotNull String other_branch) throws IOException;
+    VcsCommit merge(@NotNull String other_branch) throws IOException;
 
     /**
      * creates a new branch with name other_branch_name and checkouts that branch
