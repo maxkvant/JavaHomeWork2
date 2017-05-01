@@ -1,5 +1,8 @@
+import client.Client;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import server.ListAnswer;
+import server.Server;
 
 import java.io.File;
 import java.io.IOException;

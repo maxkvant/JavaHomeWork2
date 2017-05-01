@@ -1,3 +1,11 @@
+package server;
+
+import client.GetQuery;
+import client.ListQuery;
+import core.Query;
+import core.QueryReader;
+import core.QueryWriter;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.*;
@@ -11,7 +19,7 @@ public class Server {
             .findAny()
             .orElse(1 << 11);
 
-    volatile boolean running = true;
+    private volatile boolean running = true;
 
     public Server() throws IOException {
     }

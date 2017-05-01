@@ -1,3 +1,7 @@
+package core;
+
+import org.jetbrains.annotations.NotNull;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -10,9 +14,9 @@ public class QueryReader {
     private int currentSize = 0;
     private boolean firstRead = true;
     private byte[] bytes;
-    private ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
+    private @NotNull ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
 
-    public void read(SocketChannel channel) throws IOException {
+    public void read(@NotNull SocketChannel channel) throws IOException {
         buffer.clear();
         channel.read(buffer);
         buffer.flip();

@@ -1,3 +1,6 @@
+package server;
+
+import core.Query;
 import org.jetbrains.annotations.NotNull;
 
 public class ErrorAnswer implements Query {
