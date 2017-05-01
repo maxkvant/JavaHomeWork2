@@ -1,30 +1,39 @@
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.util.Arrays;
-import java.util.Iterator;
+import java.util.List;
 
 public class Client {
-    public void start() throws IOException, InterruptedException {
+    public List<ListAnswer.Node> executeList(String path) throws Exception {
+        Query query = new ListQuery(path);
+        ListAnswer res = (ListAnswer) execute(query);
+        return res.names;
+    }
+
+    public byte[] executeGet(String path) throws Exception {
+        Query query = new GetQuery(path);
+        GetAnswer res = (GetAnswer) execute(query);
+        return res.bytes;
+    }
+
+    private Query execute(Query query) throws Exception {
         SocketChannel channel = SocketChannel.open();
         channel.connect(new InetSocketAddress(Server.port));
 
-        ListQuery query = new ListQuery("hello");
+        QueryWriter writer = new QueryWriter(query);
+        while (!writer.isReady()) {
+            writer.write(channel);
+        }
+        QueryReader reader = new QueryReader();
+        while (!reader.isReady()) {
+            reader.read(channel);
+        }
 
-        Thread.currentThread().sleep(300);
-
-        System.out.println("before send\n");
-
-        query.send(channel);
-
-        System.out.println("send\n");
-
-        //ByteBuffer buffer = ByteBuffer.allocate(4);
-
-        //while (channel.read(buffer) != -1) {
-        //    System.out.print(new String(buffer.array()).substring(0, buffer.limit()));
-        //    buffer.clear();
-        //}
+        channel.finishConnect();
+        Query res = reader.getObject();
+        if (res instanceof ErrorAnswer) {
+            ((ErrorAnswer) res).Execute();
+        }
+        return res;
     }
 }

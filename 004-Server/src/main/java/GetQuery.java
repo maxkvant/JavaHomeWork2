@@ -1,12 +1,12 @@
-public class ListQuery implements Query {
+public class GetQuery implements Query {
     public final String path;
 
-    public ListQuery(String path) {
+    public GetQuery(String path) {
         this.path = path;
     }
 
     @Override
     public int getId() {
-        return 1;
+        return 2;
     }
 }

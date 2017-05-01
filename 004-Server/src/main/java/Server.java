@@ -1,19 +1,8 @@
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.PushbackInputStream;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.function.Supplier;
 
 public class Server {
     private final ServerSocketChannel channel = ServerSocketChannel.open();
@@ -21,6 +10,8 @@ public class Server {
             .ints(1 << 10, 1 << 15)
             .findAny()
             .orElse(1 << 11);
+
+    volatile boolean running = true;
 
     public Server() throws IOException {
     }
@@ -31,13 +22,8 @@ public class Server {
         channel.configureBlocking(false);
         channel.register(selector, SelectionKey.OP_ACCEPT);
 
-        System.out.println("port: " + port);
-
-        ExecutorService threadPool = Executors.newFixedThreadPool(7);
-
-        for (int k = 0; k < 10; k++) {
+        while (running) {
             selector.select();
-
             Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
             while (iterator.hasNext()) {
                 SelectionKey selectionKey = iterator.next();
@@ -45,31 +31,42 @@ public class Server {
                 if (!selectionKey.isValid()) {
                     continue;
                 }
-                System.out.println(selectionKey);
                 if (selectionKey.isAcceptable()) {
                     SocketChannel channel1 = channel.accept();
-
                     channel1.configureBlocking(false);
-                    ByteBuffer buffer1 = ByteBuffer.allocate(48);
-                    channel1.register(selector, SelectionKey.OP_READ, buffer1);
+                    channel1.register(selector, SelectionKey.OP_READ, new QueryReader());
                 } else if (selectionKey.isReadable()) {
-                    System.out.println("readable");
                     final SocketChannel channel1 = (SocketChannel) selectionKey.channel();
-                    final ByteBuffer buf = (ByteBuffer) selectionKey.attachment();
-                    try {
-                        int type = Util.readInt(buf, channel1);
-                        System.out.println("type = " + type);
-                        if (type == 1) {
-                            String s = Util.readString(buf, channel1);
-                            System.out.println("s = " + s);
+                    QueryReader reader = (QueryReader) selectionKey.attachment();
+                    reader.read(channel1);
+                    if (reader.isReady()) {
+                        Query answer;
+                        try {
+                            Query res = reader.getObject();
+                            if (res instanceof ListQuery) {
+                                answer = new ListAnswer(((ListQuery) res).path);
+                            } else if (res instanceof GetQuery) {
+                                answer = new GetAnswer(((GetQuery) res).path);
+                            } else {
+                                throw new IllegalArgumentException("wrong query id");
+                            }
+                        } catch (Exception e) {
+                            answer = new ErrorAnswer(e);
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        channel1.register(selector, SelectionKey.OP_WRITE, new QueryWriter(answer));
                     }
                 } if (selectionKey.isWritable()) {
-
+                    final SocketChannel channel1 = (SocketChannel) selectionKey.channel();
+                    QueryWriter writer = (QueryWriter) selectionKey.attachment();
+                    if (!writer.isReady()) {
+                        writer.write(channel1);
+                    }
                 }
             }
         }
+    }
+
+    public void shutdown() {
+        running = false;
     }
 }

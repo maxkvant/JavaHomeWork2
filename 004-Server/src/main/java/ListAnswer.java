@@ -1,6 +1,8 @@
+import com.google.common.collect.ImmutableList;
 import com.sun.imageio.stream.StreamFinalizer;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -12,28 +14,23 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ListAnswer {
+public class ListAnswer implements Query {
     public final List<Node> names;
 
-    public ListAnswer(ListQuery query) throws IOException {
-        names = Files.list(Paths.get(query.path))
+    public ListAnswer(String path) throws IOException {
+        List<Node> names = Files.list(Paths.get(path))
                 .filter(Files::isReadable)
-                .map(path -> new Node(path.getFileName().toString(), Files.isDirectory(path)))
+                .map(path1 -> new Node(path1.getFileName().toString(), Files.isDirectory(path1)))
                 .collect(Collectors.toList());
+        this.names = ImmutableList.copyOf(names);
     }
 
-    public ListAnswer(ByteBuffer buffer, SocketChannel channel) throws IOException {
-        int size = Util.readInt(buffer, channel);
-        Node[] res = new Node[size];
-        for (int i = 0; i < size; i++) {
-            boolean isDirectory = Util.readInt(buffer, channel) == 1;
-            String name = Util.readString(buffer, channel);
-            res[i] = new Node(name, isDirectory);
-        }
-        names = Arrays.asList(res);
+    @Override
+    public int getId() {
+        return 1;
     }
 
-    public class Node {
+    public class Node implements Serializable {
         public final String name;
         public final boolean isDirectory;
 
@@ -41,13 +38,10 @@ public class ListAnswer {
             this.name = name;
             this.isDirectory = isDirectory;
         }
-    }
 
-    public void send(SocketChannel channel) throws IOException {
-        Util.writeInt(names.size(), channel);
-        for (Node node : names) {
-            Util.writeString(node.name, channel);
-            Util.writeInt(node.isDirectory ? 1 : 0, channel);
+        @Override
+        public String toString() {
+            return "<" + name + (isDirectory ? ", directory" : "")  + ">";
         }
     }
 }
