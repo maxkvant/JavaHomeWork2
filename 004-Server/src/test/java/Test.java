@@ -9,10 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -63,7 +60,6 @@ public class Test {
         List<String> names = res.stream().map(node -> node.name).collect(Collectors.toList());
         List<Boolean> isDirs = res.stream().map(node -> node.isDirectory).collect(Collectors.toList());
 
-        assertThat(Arrays.asList("A", "B"), containsInAnyOrder("B", "A"));
         assertThat(names, containsInAnyOrder("B", "A", "abracadabra", "abacaba", "cat"));
         assertThat(isDirs, containsInAnyOrder(true, false, false, false, true));
     }
@@ -92,6 +88,38 @@ public class Test {
         Client client = new Client();
         List<Path> paths = initFolder();
         client.executeGet(paths.get(0).toString() + "[]");
+    }
+
+    @org.junit.Test()
+    public void mulitiClientTest() throws Exception {
+        List<Client> clients = Arrays.asList(new Client(), new Client(), new Client());
+        List<Path> paths = initFolder();
+
+        int size = 10000;
+        final byte[] bytes1 = new byte[size];
+        Path path = paths.get(0);
+        new Random().nextBytes(bytes1);
+        Files.write(path, bytes1);
+        List<Thread> threads = new ArrayList<>();
+        for (final Client client : clients) {
+            Thread thread = new Thread(() -> {
+                try {
+                    byte[] res = client.executeGet(path.toString());
+                    List<String> names = client.executeList(folder.getRoot().toString())
+                            .stream()
+                            .map(node -> node.name).collect(Collectors.toList());
+                    assertThat(names, containsInAnyOrder("B", "A", "abracadabra", "abacaba", "cat"));
+                    assertThat(res, is(equalTo(bytes1)));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            threads.add(thread);
+            thread.start();
+        }
+        for (Thread thread : threads) {
+            thread.join();
+        }
     }
 
     private List<Path> initFolder() throws IOException {
