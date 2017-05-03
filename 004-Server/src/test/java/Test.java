@@ -46,6 +46,7 @@ public class Test {
         List<String> names = res.stream().map(node -> node.name).collect(Collectors.toList());
         List<Boolean> isDirs = res.stream().map(node -> node.isDirectory).collect(Collectors.toList());
 
+        System.out.print(names);
         assertThat(names, containsInAnyOrder("B", "A", "abracadabra", "abacaba", "cat"));
         assertThat(isDirs, containsInAnyOrder(true, false, false, false, true));
     }
@@ -83,11 +84,11 @@ public class Test {
         }
     }
 
-    @org.junit.Test(expected=java.nio.file.NoSuchFileException.class)
     public void executeGetTest2() throws Exception {
         Client client = new Client();
         List<Path> paths = initFolder();
-        client.executeGet(paths.get(0).toString() + "[]");
+        byte[] res = client.executeGet(paths.get(0).toString() + "[]");
+        assertThat(res, is(equalTo(new byte[0])));
     }
 
     @org.junit.Test()
