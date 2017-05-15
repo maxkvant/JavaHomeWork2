@@ -1,7 +1,9 @@
 package task.annotations;
 
+import org.jetbrains.annotations.NotNull;
+
 public class Checks {
-    final static String nullString = "";
+    final static @NotNull String nullString = "";
     final class MyThrowable extends Throwable {}
 
     public static boolean hasException(Test test) {

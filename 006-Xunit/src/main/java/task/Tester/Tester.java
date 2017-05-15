@@ -1,7 +1,7 @@
 package task.Tester;
 
 import com.google.common.collect.ImmutableList;
-import com.sun.istack.internal.NotNull;
+import org.jetbrains.annotations.NotNull;
 import task.annotations.*;
 
 import java.lang.annotation.Annotation;
