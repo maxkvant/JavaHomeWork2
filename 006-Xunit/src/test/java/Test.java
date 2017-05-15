@@ -32,35 +32,35 @@ public class Test {
 
     @org.junit.Test
     public void testException() throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        TestResult result = new Tester(TestException.class).execute().get(0);
+        TestResult result = new Tester(TestException.class).call().get(0);
         assertThat(result.ok, is(equalTo(false)));
         assertThat(result.exception, allOf(is(instanceOf(RuntimeException.class)), not(is(nullValue()))));
     }
 
     @org.junit.Test
     public void testExpectedException() throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        TestResult result = new Tester(TestExpectedExcetion.class).execute().get(0);
+        TestResult result = new Tester(TestExpectedExcetion.class).call().get(0);
         assertThat(result.ok, is(equalTo(true)));
         assertThat(result.exception, is(nullValue()));
     }
 
     @org.junit.Test
     public void testUnexpectedException() throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        TestResult result = new Tester(TestUnexpectedExcetion.class).execute().get(0);
+        TestResult result = new Tester(TestUnexpectedExcetion.class).call().get(0);
         assertThat(result.ok, is(equalTo(false)));
         assertThat(result.exception, allOf(is(instanceOf(UnsupportedOperationException.class)), not(is(nullValue()))));
     }
 
     @org.junit.Test
     public void testPassed() throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        TestResult result = new Tester(TestPassed.class).execute().get(0);
+        TestResult result = new Tester(TestPassed.class).call().get(0);
         assertThat(result.ok, is(equalTo(true)));
         assertThat(result.exception, is(nullValue()));
     }
 
     @org.junit.Test
     public void testIgnored() throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        TestResult result = new Tester(TestIgnored.class).execute().get(0);
+        TestResult result = new Tester(TestIgnored.class).call().get(0);
         assertThat(result.ok, is(equalTo(true)));
         assertThat(result.exception, is(nullValue()));
         assertThat(result.message, containsString("ignore"));

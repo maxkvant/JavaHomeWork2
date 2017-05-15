@@ -12,7 +12,7 @@ public class TestsRunner {
         Loader loader = new Loader();
         List<Class<?>> testClasses = loader.load(path, rootPackage);
         for (Class<?> clazz : testClasses) {
-            new Tester(clazz).execute();
+            new Tester(clazz).call();
         }
     }
 }

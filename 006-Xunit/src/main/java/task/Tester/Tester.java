@@ -10,8 +10,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.concurrent.Callable;
 
-public class Tester {
+public class Tester implements Callable<List<TestResult>> {
     private final static List<Class<? extends Annotation> > supportedAnnotations = ImmutableList.of(
             Test.class,
             After.class,
@@ -40,7 +41,7 @@ public class Tester {
         }
     }
 
-    public List<TestResult> execute() {
+    public List<TestResult> call() {
         List<TestResult> res = new ArrayList<>();
         try {
             for (Method method : annotatedMethods.get(BeforeClass.class)) {
