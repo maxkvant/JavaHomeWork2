@@ -1,0 +1,10 @@
+language: java
+jdk:
+  - oraclejdk8
+os:
+  - linux
+env: 
+  - SOURCE_DIR_1=006-Xunit
+script:
+  - cd $SOURCE_DIR_1 && gradle check
+
