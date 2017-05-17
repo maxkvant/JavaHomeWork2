@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
 import task.annotations.*;
 
+import javax.sound.midi.SysexMessage;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -46,7 +47,7 @@ public class Tester implements Callable<List<TestResult>> {
         try {
             for (Method method : annotatedMethods.get(BeforeClass.class)) {
                 if (isStatic(method)) {
-                    runMethod(null, method);
+                    runMethodReport(null, method);
                 }
             }
 
@@ -54,27 +55,26 @@ public class Tester implements Callable<List<TestResult>> {
                 Object test = constructor.newInstance();
 
                 for (Method method1 : annotatedMethods.get(Before.class)) {
-                    runMethod(test, method1);
+                    runMethodReport(test, method1);
                 }
 
                 TestResult testResult = runTest(test, method);
                 res.add(testResult);
-                System.out.println(testResult.ok);
                 testResult.print(System.out);
 
                 for (Method method1 : annotatedMethods.get(After.class)) {
-                    runMethod(test, method1);
+                    runMethodReport(test, method1);
                 }
             }
 
             for (Method method : annotatedMethods.get(AfterClass.class)) {
                 if (isStatic(method)) {
-                    runMethod(null, method);
+                    runMethodReport(null, method);
                 }
             }
 
         } catch (Throwable throwable) {
-            throwable.printStackTrace();
+            throwable.printStackTrace(System.out);
             return new ArrayList<>();
         }
         return res;
@@ -87,6 +87,15 @@ public class Tester implements Callable<List<TestResult>> {
             throw e.getCause();
         } catch (IllegalAccessException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void runMethodReport(Object object, Method method) {
+        try {
+            runMethod(object, method);
+        } catch (Throwable e) {
+            System.out.println("error executing method: " + method);
+            e.printStackTrace(System.out);
         }
     }
 

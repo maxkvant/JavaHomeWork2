@@ -7,7 +7,7 @@ import java.io.PrintStream;
 import java.lang.reflect.Method;
 
 public class TestResult {
-    public final @NotNull Method method;
+    private final @NotNull Method method;
     public final boolean ok;
     public final @NotNull String message;
     public final @Nullable Throwable exception;
@@ -38,7 +38,7 @@ public class TestResult {
     }
 
     public void print(PrintStream out) {
-        out.println(method);
+        out.println("Testing " + method);
         if (ok) {
             out.println("Ok");
             out.println(message);
