@@ -18,8 +18,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+
 public class Loader {
-    public List<Class<?>> load(@NotNull final Path path, @NotNull String rootPackage) {
+    /**
+     * Loads classes from path, which are located in package rootPackage
+     */
+    public static List<Class<?>> load(@NotNull final Path path, @NotNull String rootPackage) {
         List<Class<?>> classes = new ArrayList<>();
         try {
             URL[] urls = new URL[] {path.toUri().toURL()};

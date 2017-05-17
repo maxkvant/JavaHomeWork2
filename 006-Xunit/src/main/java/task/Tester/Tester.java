@@ -13,6 +13,9 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+/**
+ * Class for running tests from clazz
+ */
 public class Tester implements Callable<List<TestResult>> {
     private final static List<Class<? extends Annotation> > supportedAnnotations = ImmutableList.of(
             Test.class,
@@ -42,6 +45,14 @@ public class Tester implements Callable<List<TestResult>> {
         }
     }
 
+    /**
+     * Runs test class methods of clazz annotated @Test, @Before, @After, @BeforeClass, @AfterClass
+     * @see Test
+     * @see Before
+     * @see After
+     * @see BeforeClass
+     * @see AfterClass
+     */
     public List<TestResult> call() {
         List<TestResult> res = new ArrayList<>();
         try {

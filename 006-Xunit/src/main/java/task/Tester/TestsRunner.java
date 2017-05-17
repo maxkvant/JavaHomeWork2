@@ -7,7 +7,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.List;
 
+
 public class TestsRunner {
+    /**
+     * Runs test classes from path, which are located in package rootPackage
+     */
+
     public static void run(@NotNull Path path, @NotNull String rootPackage) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         Loader loader = new Loader();
         List<Class<?>> testClasses = loader.load(path, rootPackage);

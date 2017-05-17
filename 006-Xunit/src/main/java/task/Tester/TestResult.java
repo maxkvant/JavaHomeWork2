@@ -6,8 +6,11 @@ import org.jetbrains.annotations.Nullable;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
 
+/**
+ * Stores result run some test.
+ */
 public class TestResult {
-    private final @NotNull Method method;
+    public final @NotNull Method method;
     public final boolean ok;
     public final @NotNull String message;
     public final @Nullable Throwable exception;
@@ -21,22 +24,25 @@ public class TestResult {
         this.time = time;
     }
 
-    public static TestResult ok(@NotNull Method method, long time) {
+    static TestResult ok(@NotNull Method method, long time) {
         return new TestResult(method, true, "ok.", null, time);
     }
 
-    public static TestResult expectedException(@NotNull Method method, @NotNull Class<? extends Throwable> exceptionClass, long time) {
+    static TestResult expectedException(@NotNull Method method, @NotNull Class<? extends Throwable> exceptionClass, long time) {
         return new TestResult(method, false, "expected " + exceptionClass.getName(), null, time);
     }
 
-    public static TestResult exception(@NotNull Method method, @NotNull Throwable exception, long time) {
+    static TestResult exception(@NotNull Method method, @NotNull Throwable exception, long time) {
         return new TestResult(method, false, "exception: ", exception, time);
     }
 
-    public static TestResult ignored(@NotNull Method method, @NotNull String message) {
+    static TestResult ignored(@NotNull Method method, @NotNull String message) {
         return new TestResult(method, true, "ignore. \ncause:" + message, null, 0);
     }
 
+    /**
+     * Prints report of result to out
+     */
     public void print(PrintStream out) {
         out.println("Testing " + method);
         if (ok) {

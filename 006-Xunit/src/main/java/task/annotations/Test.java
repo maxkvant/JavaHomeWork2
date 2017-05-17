@@ -5,6 +5,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Marks test method, where
+ * ignore -- cause of ignore this test, if set execution of test will be denied
+ * exception -- if set, test pass if and only if that kind exception thrown
+ */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Test {
