@@ -17,24 +17,14 @@ import static org.hamcrest.Matchers.*;
 public class Test {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
-    private static Server server;
+    private static Server server = new Server();
+
     static {
-        Server server1 = null;
         try {
-            server1 = new Server();
-        } catch (IOException e) {
+            server.start();
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
-        server = server1;
-
-        new Thread(() -> {
-            try {
-                server.start();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
     }
 
     @org.junit.Test

@@ -12,6 +12,9 @@ import java.nio.channels.*;
 import java.util.Iterator;
 import java.util.Random;
 
+/**
+ * implements simple nonblocking sever
+ */
 public class Server {
     private Thread loopThread;
     private ServerSocketChannel channel;
@@ -23,9 +26,9 @@ public class Server {
 
     private boolean running = false;
 
-    public Server() throws IOException {
-    }
-
+    /**
+     * starts server, if not running
+     */
     public synchronized void start() throws Exception {
         if (!running) {
             Selector selector;
@@ -45,6 +48,15 @@ public class Server {
             });
             loopThread.start();
         }
+    }
+
+    /**
+     * stops server
+     */
+    public synchronized void stop() throws IOException {
+        running = false;
+        channel.close();
+        loopThread.interrupt();
     }
 
     private void loop(Selector selector) throws IOException {
@@ -91,11 +103,5 @@ public class Server {
                 }
             }
         }
-    }
-
-    public synchronized void stop() throws IOException {
-        running = false;
-        channel.close();
-        loopThread.interrupt();
     }
 }
