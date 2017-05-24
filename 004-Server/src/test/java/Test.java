@@ -92,7 +92,7 @@ public class Test {
     }
 
     @org.junit.Test()
-    public void mulitiClientTest() throws Exception {
+    public void multiClientTest() throws Exception {
         List<Client> clients = Arrays.asList(new Client(), new Client(), new Client());
         List<Path> paths = initFolder();
 
@@ -121,6 +121,22 @@ public class Test {
         for (Thread thread : threads) {
             thread.join();
         }
+    }
+
+    @org.junit.Test
+    public void startStopTest() throws Exception {
+        Client client = new Client();
+        initFolder();
+
+        server.stop();
+        server.start();
+        server.stop();
+        server.start();
+
+        List<ListAnswer.Node> res = client.executeList(folder.getRoot().toString());
+
+        List<String> names = res.stream().map(node -> node.name).collect(Collectors.toList());
+        assertThat(names, containsInAnyOrder("B", "A", "abracadabra", "abacaba", "cat"));
     }
 
     private List<Path> initFolder() throws IOException {
