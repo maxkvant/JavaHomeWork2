@@ -17,6 +17,16 @@ import java.util.List;
  * Client for Server
  */
 public class Client {
+    private final InetSocketAddress inetSocketAddress;
+
+    public Client() {
+        inetSocketAddress = new InetSocketAddress(Server.port);
+    }
+
+    public Client(String host) {
+        inetSocketAddress = new InetSocketAddress(host, Server.port);
+    }
+
     /**
      * returns list of folders and files in path from Server if path exists,
      * otherwise returns empty list
@@ -39,7 +49,7 @@ public class Client {
 
     private @NotNull Query execute(@NotNull Query query) throws Exception {
         SocketChannel channel = SocketChannel.open();
-        channel.connect(new InetSocketAddress(Server.port));
+        channel.connect(inetSocketAddress);
 
         QueryWriter writer = new QueryWriter(query);
         while (!writer.isReady()) {
