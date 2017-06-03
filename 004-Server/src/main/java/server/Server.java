@@ -12,24 +12,54 @@ import java.nio.channels.*;
 import java.util.Iterator;
 import java.util.Random;
 
+/**
+ * implements simple nonblocking sever
+ */
 public class Server {
-    private final ServerSocketChannel channel = ServerSocketChannel.open();
+    private Thread loopThread;
+    private ServerSocketChannel channel;
+
     public final static int port = new Random()
             .ints(1 << 10, 1 << 15)
             .findAny()
             .orElse(1 << 11);
 
-    private volatile boolean running = true;
+    private boolean running = false;
 
-    public Server() throws IOException {
+    /**
+     * starts server, if not running
+     */
+    public synchronized void start() throws Exception {
+        if (!running) {
+            Selector selector;
+            running = true;
+            channel = ServerSocketChannel.open();
+            channel.bind(new InetSocketAddress(port));
+            selector = Selector.open();
+            channel.configureBlocking(false);
+            channel.register(selector, SelectionKey.OP_ACCEPT);
+
+            loopThread = new Thread(() -> {
+                try {
+                    loop(selector);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            loopThread.start();
+        }
     }
 
-    public void start() throws Exception {
-        channel.bind(new InetSocketAddress(port));
-        Selector selector = Selector.open();
-        channel.configureBlocking(false);
-        channel.register(selector, SelectionKey.OP_ACCEPT);
+    /**
+     * stops server
+     */
+    public synchronized void stop() throws IOException {
+        running = false;
+        channel.close();
+        loopThread.interrupt();
+    }
 
+    private void loop(Selector selector) throws IOException {
         while (running) {
             selector.select();
             Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
@@ -63,7 +93,8 @@ public class Server {
                         }
                         channel1.register(selector, SelectionKey.OP_WRITE, new QueryWriter(answer));
                     }
-                } if (selectionKey.isWritable()) {
+                }
+                if (selectionKey.isWritable()) {
                     final SocketChannel channel1 = (SocketChannel) selectionKey.channel();
                     QueryWriter writer = (QueryWriter) selectionKey.attachment();
                     if (!writer.isReady()) {
@@ -72,9 +103,5 @@ public class Server {
                 }
             }
         }
-    }
-
-    public void shutdown() {
-        running = false;
     }
 }

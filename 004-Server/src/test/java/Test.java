@@ -17,24 +17,14 @@ import static org.hamcrest.Matchers.*;
 public class Test {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
-    private static Server server;
+    private static Server server = new Server();
+
     static {
-        Server server1 = null;
         try {
-            server1 = new Server();
-        } catch (IOException e) {
+            server.start();
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
-        server = server1;
-
-        new Thread(() -> {
-            try {
-                server.start();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
     }
 
     @org.junit.Test
@@ -92,7 +82,7 @@ public class Test {
     }
 
     @org.junit.Test()
-    public void mulitiClientTest() throws Exception {
+    public void multiClientTest() throws Exception {
         List<Client> clients = Arrays.asList(new Client(), new Client(), new Client());
         List<Path> paths = initFolder();
 
@@ -121,6 +111,22 @@ public class Test {
         for (Thread thread : threads) {
             thread.join();
         }
+    }
+
+    @org.junit.Test
+    public void startStopTest() throws Exception {
+        Client client = new Client();
+        initFolder();
+
+        server.stop();
+        server.start();
+        server.stop();
+        server.start();
+
+        List<ListAnswer.Node> res = client.executeList(folder.getRoot().toString());
+
+        List<String> names = res.stream().map(node -> node.name).collect(Collectors.toList());
+        assertThat(names, containsInAnyOrder("B", "A", "abracadabra", "abacaba", "cat"));
     }
 
     private List<Path> initFolder() throws IOException {

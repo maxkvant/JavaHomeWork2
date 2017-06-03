@@ -8,14 +8,20 @@ import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
+/**
+ * class for reading Query in server
+ */
 public class QueryReader {
-    public static final int bufferSize = 48;
+    private static final int bufferSize = 48;
     private int id;
     private int currentSize = 0;
     private boolean firstRead = true;
     private byte[] bytes;
     private @NotNull ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
 
+    /**
+     * Reads from channel part of query
+     */
     public void read(@NotNull SocketChannel channel) throws IOException {
         buffer.clear();
         channel.read(buffer);
@@ -34,6 +40,9 @@ public class QueryReader {
         buffer.clear();
     }
 
+    /**
+     * checks is query read
+     */
     public boolean isReady() {
         return !firstRead && currentSize == bytes.length;
     }
@@ -45,9 +54,13 @@ public class QueryReader {
         return id;
     }
 
+    /**
+     * if query is read, returns query
+     * otherwise throws IllegalAccessException
+     */
     public Query getObject() throws IOException, IllegalAccessException, ClassNotFoundException {
         if (!isReady()) {
-            throw new IllegalAccessException();
+            throw new IllegalAccessException("query is not ready");
         }
         try (ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
             return (Query) objectInputStream.readObject();

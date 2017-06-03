@@ -3,10 +3,13 @@ package client;
 import core.Query;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Class for query to get file by path
+ */
 public class GetQuery implements Query {
     public @NotNull final String path;
 
-    public GetQuery(@NotNull String path) {
+    GetQuery(@NotNull String path) {
         this.path = path;
     }
 

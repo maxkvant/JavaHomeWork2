@@ -13,12 +13,19 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * class for an answer to ListQuery
+ * @see Query
+ * @see client.Client
+ */
 public class ListAnswer implements Query {
     public @NotNull final List<Node> names;
 
+    /**
+     * Creates ListQuery, where names is list of file names and directories names in path
+     */
     public ListAnswer(@NotNull String path) throws IOException {
         Path pathCur = Paths.get(path);
-
 
         if (Files.exists(pathCur) && Files.isDirectory(pathCur)) {
             List<Node> names = Files.list(pathCur)
@@ -37,6 +44,9 @@ public class ListAnswer implements Query {
         return 1;
     }
 
+    /**
+     * Element of list file and folder names in current directory
+     */
     public static class Node implements Serializable {
         public final String name;
         public final boolean isDirectory;
@@ -44,11 +54,6 @@ public class ListAnswer implements Query {
         public Node(String name, boolean isDirectory) {
             this.name = name;
             this.isDirectory = isDirectory;
-        }
-
-        @Override
-        public String toString() {
-            return "<" + name + (isDirectory ? ", directory" : "")  + ">";
         }
     }
 }

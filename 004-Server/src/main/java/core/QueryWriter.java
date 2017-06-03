@@ -9,9 +9,15 @@ import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
+/**
+ * class for writing query to channel
+ */
 public class QueryWriter {
     private final @NotNull ByteBuffer buffer;
 
+    /**
+     * Creates writer of query
+     */
     public QueryWriter(Query query) throws IOException {
         ByteArrayOutputStream bosObject = new ByteArrayOutputStream();
         ByteArrayOutputStream bosData = new ByteArrayOutputStream();
@@ -29,10 +35,16 @@ public class QueryWriter {
         }
     }
 
+    /**
+     * writes to channel part of query
+     */
     public void write(@NotNull SocketChannel channel) throws IOException {
         channel.write(buffer);
     }
 
+    /**
+     * checks is query written
+     */
     public boolean isReady() {
         return !buffer.hasRemaining();
     }
