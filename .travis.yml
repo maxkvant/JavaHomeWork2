@@ -5,5 +5,7 @@ os:
   - linux
 env: 
   - SOURCE_DIR_1=004-Server
+  - SOURCE_DIR_2=001-Lazy
 script:
   - cd $SOURCE_DIR_1 && ./gradlew check && cd ..
+  - cd $SOURCE_DIR_2 && ./gradlew check && cd ..
