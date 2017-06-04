@@ -19,10 +19,7 @@ public class Server {
     private Thread loopThread;
     private ServerSocketChannel channel;
 
-    public final static int port = new Random()
-            .ints(1 << 10, 1 << 15)
-            .findAny()
-            .orElse(1 << 11);
+    public final static int port = 63997;
 
     private boolean running = false;
 
